@@ -25,8 +25,9 @@ export default class Bree {
 
       jobs: [
         {
-          name: 'job',
-          interval: 'every 1 hour',
+          name: 'steamscrap',
+          timeout: '3 minutes',
+          // interval: 'every 5 seconds',
         },
       ],
     })
@@ -35,11 +36,21 @@ export default class Bree {
   async init() {
     await this._instance
       .start()
-      .then(() => logger.info('[service] Bree - Started properly'))
+      .then(() => {
+        this._initEvents()
+        logger.info('[service] Bree - Started properly')
+      })
       .catch((error) =>
         Except.serviceUnavailable('none', {
           debug: { message: '[service] Bree - Failed to start', error },
         })
       )
+  }
+
+  private _initEvents() {
+    this._instance.on('worker deleted', (name) => {
+      console.log(`Worker ${name} stopped`)
+      // this._instance.start('steamscrap')
+    })
   }
 }

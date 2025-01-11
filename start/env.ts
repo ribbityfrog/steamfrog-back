@@ -65,4 +65,11 @@ export default await Env.create(new URL('../', import.meta.url), {
   S3_ENDPOINT: Env.schema.string(),
   S3_ACL: Env.schema.boolean(),
   S3_VISIBILITY: Env.schema.enum(['public', 'private'] as const),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Steam
+  |----------------------------------------------------------
+  */
+  STEAM_KEY: Env.schema.string(),
 })
