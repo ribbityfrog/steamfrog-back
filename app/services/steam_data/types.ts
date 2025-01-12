@@ -7,3 +7,14 @@ export type SteamEndpoint = {
 }
 
 export type SteamEndpointKeys = keyof typeof steamEndpoints
+
+type SteamListItem = {
+  appid: number
+  name: string
+  last_modified: number
+}
+export type SteamList = {
+  apps: SteamListItem[]
+  have_more_results?: boolean
+  last_appid?: number
+}

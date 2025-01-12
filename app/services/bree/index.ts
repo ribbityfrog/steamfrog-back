@@ -26,19 +26,20 @@ export default class Bree {
       jobs: [
         {
           name: 'steamscrap',
-          timeout: '3 minutes',
+          timeout: '3 seconds',
           // interval: 'every 5 seconds',
         },
       ],
     })
   }
 
-  async init() {
+  async start() {
     await this._instance
       .start()
       .then(() => {
         this._initEvents()
         logger.info('[service] Bree - Started properly')
+        this._ready = true
       })
       .catch((error) =>
         Except.serviceUnavailable('none', {
