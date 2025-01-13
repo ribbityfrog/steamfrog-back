@@ -1,11 +1,15 @@
 import { Ignitor } from '@adonisjs/core'
 import { ApplicationService } from '@adonisjs/core/types'
+import { AppEnvironments } from '@adonisjs/core/types/app'
 
-export default async (rootUrl: URL | string): Promise<ApplicationService | null> => {
+export default async (
+  rootUrl: URL | string,
+  environment: AppEnvironments = 'repl'
+): Promise<ApplicationService | null> => {
   const appRoot = typeof rootUrl === 'string' ? new URL(rootUrl) : rootUrl
 
   try {
-    const app = new Ignitor(new URL(appRoot)).createApp('repl')
+    const app = new Ignitor(new URL(appRoot)).createApp(environment)
     await app.init()
     await app.boot()
     if (!app.booted) return null
