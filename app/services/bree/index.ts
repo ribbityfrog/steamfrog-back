@@ -1,9 +1,8 @@
 import env from '#start/env'
-import * as path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import BreeInstance from 'bree'
 import logger from '@adonisjs/core/services/logger'
 import Except from '#utils/except'
+import app from '@adonisjs/core/services/app'
 
 export default class Bree {
   private _instance: BreeInstance
@@ -19,9 +18,15 @@ export default class Bree {
 
   constructor() {
     this._instance = new BreeInstance({
-      root: path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs'),
+      // root: path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs'),
 
       defaultExtension: env.get('NODE_ENV', 'production') === 'production' ? 'js' : 'ts',
+
+      worker: {
+        workerData: {
+          appRootString: app.appRoot.href,
+        },
+      },
 
       jobs: [
         {

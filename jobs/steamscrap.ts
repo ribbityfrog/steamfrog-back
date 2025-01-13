@@ -1,19 +1,16 @@
+import { workerData } from 'node:worker_threads'
 import { parentPort } from 'node:worker_threads'
 import process from 'node:process'
-
-import { Ignitor } from '@adonisjs/core'
-import path from 'node:path'
 
 import SteamApp from '#models/catalogues/steam_app'
 
 import steamData from '#services/steam_data'
 
 import { DateTime } from 'luxon'
+import igniteApp from '#utils/ignite_app'
 
-const app = new Ignitor(new URL('file:///D:/Projects/steamy/')).createApp('repl')
-await app.init()
-await app.boot()
-await app.start(() => {})
+const app = await igniteApp(workerData.appRootString)
+if (app === null) process.exit(1)
 
 let lastAppid = 0
 
