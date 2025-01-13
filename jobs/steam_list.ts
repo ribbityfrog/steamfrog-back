@@ -21,8 +21,6 @@ if (lastWave === null) await wave.refresh()
 
 if (wave.step === 'enrich' || wave.step === 'stats') process.exit(0)
 
-console.log(wave.lastAppid)
-
 while (true) {
   const list = await steamData.getList(wave.lastAppid)
 
