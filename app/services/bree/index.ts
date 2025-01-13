@@ -3,6 +3,7 @@ import BreeInstance from 'bree'
 import logger from '@adonisjs/core/services/logger'
 import Except from '#utils/except'
 import app from '@adonisjs/core/services/app'
+import Wave from '#models/treatments/wave'
 
 export default class Bree {
   private _instance: BreeInstance
@@ -31,16 +32,21 @@ export default class Bree {
       jobs: [
         {
           name: 'steam_list',
-          timeout: '3 seconds',
-          // interval: 'every 5 seconds',
+          timeout: '10 seconds',
+        },
+        {
+          name: 'steam_enrich',
+          timeout: '20 seconds',
         },
       ],
     })
   }
 
   async start() {
+    const { job } = await this._launchLogic()
+
     await this._instance
-      .start()
+      .start(job)
       .then(() => {
         this._initEvents()
         logger.info('[service] Bree - Started properly')
@@ -53,10 +59,30 @@ export default class Bree {
       )
   }
 
+  private async _launchLogic(stoppedJob?: string): Promise<{ mode: 'run' | 'start'; job: string }> {
+    const wave = await Wave.query().orderBy('wave', 'desc').first()
+    if (wave === null) return { mode: 'run', job: 'steam_list' }
+
+    if (wave.step === 'list') {
+      if (stoppedJob === 'steam_list') return { mode: 'start', job: 'steam_list' }
+      return { mode: 'run', job: 'steam_list' }
+    }
+
+    if (wave.step === 'enrich') {
+      if (stoppedJob === 'steam_enrich') return { mode: 'start', job: 'steam_enrich' }
+      return { mode: 'run', job: 'steam_enrich' }
+    }
+
+    return { mode: 'start', job: 'steam_list' }
+  }
+
   private _initEvents() {
-    this._instance.on('worker deleted', (name) => {
+    this._instance.on('worker deleted', async (name) => {
       console.log(`Worker ${name} stopped`)
-      // this._instance.start('steamscrap')
+
+      const work = await this._launchLogic(name)
+      if (work.mode === 'start') this._instance.start(work.job)
+      else if (work.mode === 'run') this._instance.run(work.job)
     })
   }
 }
