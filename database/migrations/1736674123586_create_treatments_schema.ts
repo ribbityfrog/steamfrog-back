@@ -13,9 +13,9 @@ export default class extends BaseSchema {
     this.schema.withSchema(this.schemaName).createTable(this.tableName, (table) => {
       defaultFieldsMigration(this, table)
 
-      table.increments('wave')
+      table.increments('wave').notNullable()
 
-      table.enum('step', waveSteps).notNullable().defaultTo('listing')
+      table.enum('step', waveSteps).notNullable().defaultTo('list')
       table.integer('last_appid').notNullable().defaultTo(0)
     })
   }

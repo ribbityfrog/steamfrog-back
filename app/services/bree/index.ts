@@ -30,7 +30,7 @@ export default class Bree {
 
       jobs: [
         {
-          name: 'steamscrap',
+          name: 'steam_list',
           timeout: '3 seconds',
           // interval: 'every 5 seconds',
         },

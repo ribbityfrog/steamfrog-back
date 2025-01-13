@@ -12,7 +12,7 @@ export default class extends BaseSchema {
     this.schema.withSchema(this.schemaName).createTable(this.tableName, (table) => {
       table.integer('id').primary()
 
-      table.enum('app_type', appTypes).notNullable()
+      table.enum('app_type', appTypes).notNullable().defaultTo('new')
       table.string('name').notNullable()
 
       table.timestamp('store_updated_at').notNullable()

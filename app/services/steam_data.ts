@@ -6,8 +6,6 @@ class SteamData {
   private _apiKey = env.get('STEAM_KEY')
 
   async getList(last_appid: number = 0, max_results: number = 10000): Promise<SteamList | null> {
-    if (last_appid !== 0) Promise.reject('nope')
-
     const endpoint = this._buildEndpoint('list', { last_appid, max_results })
     const parsedResult = await this._fetchEndpoint(endpoint)
 
