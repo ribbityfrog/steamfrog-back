@@ -32,7 +32,7 @@ if (lastWave === null)
 if (wave.step === 'enrich' || wave.step === 'stats') process.exit(0)
 
 while (true) {
-  const list = await steamData.getList(wave.lastAppid)
+  const list = await steamData.getStoreList(wave.lastAppid)
 
   if (list === null) {
     breeEmit.steamLimitExceeded()

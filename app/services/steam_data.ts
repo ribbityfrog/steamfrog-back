@@ -1,29 +1,38 @@
 import env from '#start/env'
 import steamEndpoints from '#services/steam_data/endpoints'
-import type { SteamEndpointKeys, SteamList } from '#services/steam_data/types'
+import type {
+  SteamAchievement,
+  SteamEndpointKeys,
+  SteamReviews,
+  SteamStoreList,
+  SteamStorePage,
+} from '#services/steam_data/types'
 
 class SteamData {
   private _apiKey = env.get('STEAM_KEY')
 
-  async getList(last_appid: number = 0, max_results: number = 10000): Promise<SteamList | null> {
+  async getStoreList(
+    last_appid: number = 0,
+    max_results: number = 10000
+  ): Promise<SteamStoreList | null> {
     const result = await this._buildAndFetch('list', { last_appid, max_results })
 
     return result?.response ?? null
   }
 
-  async getApp(appids: number): Promise<any | null> {
+  async getStorePage(appids: number): Promise<SteamStorePage | null> {
     const result = await this._buildAndFetch('app', { appids })
 
     return result?.[String(appids)]?.data ?? null
   }
 
-  async getReviews(gameid: number) {
+  async getReviews(gameid: number): Promise<SteamReviews | null> {
     const result = await this._buildAndFetch('reviews', {}, String(gameid))
 
     return result?.query_summary ?? null
   }
 
-  async getAchievements(gameid: number): Promise<any | null> {
+  async getAchievements(gameid: number): Promise<SteamAchievement[] | null> {
     const [achievementsResult, schemaParsedResult] = await Promise.all([
       this._buildAndFetch('achievements', { gameid }, '', false),
       this.getSchema(gameid),
@@ -50,7 +59,7 @@ class SteamData {
           description: schema.description,
           hidden: Boolean(schema.hidden),
           percent: Math.round(achievement.percent * 100) / 100,
-        }
+        } satisfies SteamAchievement
       })
   }
 
