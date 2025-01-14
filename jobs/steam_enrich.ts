@@ -1,5 +1,4 @@
 import { workerData } from 'node:worker_threads'
-import process from 'node:process'
 
 import SteamApp from '#models/catalogues/steam_app'
 import Wave from '#models/treatments/wave'

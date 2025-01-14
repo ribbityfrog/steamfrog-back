@@ -1,20 +1,19 @@
 import env from '#start/env'
 import BreeInstance from 'bree'
 import logger from '@adonisjs/core/services/logger'
-import Except from '#utils/except'
 import app from '@adonisjs/core/services/app'
 import Wave from '#models/treatments/wave'
 
 export default class Bree {
   private _instance: BreeInstance
-  private _ready: boolean = false
+  private _idReady: boolean = false
 
   get instance(): BreeInstance {
     return this._instance
   }
 
   get isReady(): boolean {
-    return this._ready
+    return this._idReady
   }
 
   constructor() {
@@ -50,24 +49,33 @@ export default class Bree {
   }
 
   async start() {
-    const { job } = await this._launchLogic()
+    const worker = await this._launchLogic()
 
-    await this._instance
-      .run(job)
-      .then(() => {
-        this._initEvents()
-        logger.info('[service] Bree - Started properly')
-        this._ready = true
-      })
-      .catch((error) =>
-        Except.serviceUnavailable('none', {
-          debug: { message: '[service] Bree - Failed to start', error },
-        })
-      )
+    if (worker === null) return
+
+    // await this._instance
+    //   .run(job)
+    //   .then(() => {
+    //     this._initEvents()
+    //     logger.info('[service] Bree - Started properly')
+    //     this._ready = true
+    //   })
+    //   .catch((error) =>
+    //     Except.serviceUnavailable('none', {
+    //       debug: { message: '[service] Bree - Failed to start', error },
+    //     })
+    //   )
   }
 
-  private async _launchLogic(stoppedJob?: string): Promise<{ mode: 'run' | 'start'; job: string }> {
-    const wave = await Wave.query().orderBy('wave', 'desc').first()
+  private async _launchLogic(
+    stoppedJob?: string
+  ): Promise<{ mode: 'run' | 'start'; job: string } | null> {
+    const wave = await Wave.query()
+      .orderBy('wave', 'desc')
+      .first()
+      .catch(() => logger.error('[service] Bree - Failed to get Wave and decide of the logic'))
+
+    if (wave === undefined) return null
     if (wave === null) return { mode: 'run', job: 'steam_list' }
 
     if (wave.step === 'list') {
@@ -92,7 +100,9 @@ export default class Bree {
       logger.info(`[Bree] Worker "${name}" stopped`)
 
       const work = await this._launchLogic(name)
-      if (work.mode === 'start') this._instance.start(work.job)
+
+      if (work === null) logger.error('[service] Bree - Failed stat next steam logic')
+      else if (work.mode === 'start') this._instance.start(work.job)
       else if (work.mode === 'run') this._instance.run(work.job)
     })
 
