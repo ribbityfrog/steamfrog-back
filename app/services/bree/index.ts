@@ -22,6 +22,7 @@ export default class Bree {
       // root: path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs'),
 
       defaultExtension: env.get('NODE_ENV', 'production') === 'production' ? 'js' : 'ts',
+      logger: env.get('NODE_ENV', 'production') === 'production' ? false : console,
 
       worker: {
         workerData: {
@@ -32,13 +33,19 @@ export default class Bree {
       jobs: [
         {
           name: 'steam_list',
-          timeout: '10 seconds',
+          timeout: '5 minutes',
         },
         {
           name: 'steam_enrich',
-          timeout: '20 seconds',
+          timeout: '5 seconds',
         },
       ],
+
+      workerMessageHandler: (worker) => {
+        if (worker.message === 'done') return
+        logger.info(`[Bree] Received ${worker.message.type} from ${worker.name}`)
+        this._instance.emit(worker.message.type, worker)
+      },
     })
   }
 
@@ -46,7 +53,7 @@ export default class Bree {
     const { job } = await this._launchLogic()
 
     await this._instance
-      .start(job)
+      .run(job)
       .then(() => {
         this._initEvents()
         logger.info('[service] Bree - Started properly')
@@ -77,12 +84,26 @@ export default class Bree {
   }
 
   private _initEvents() {
+    this._instance.on('worker created', async (name) =>
+      logger.info(`[Bree] Worker "${name}" started`)
+    )
+
     this._instance.on('worker deleted', async (name) => {
-      console.log(`Worker ${name} stopped`)
+      logger.info(`[Bree] Worker "${name}" stopped`)
 
       const work = await this._launchLogic(name)
       if (work.mode === 'start') this._instance.start(work.job)
       else if (work.mode === 'run') this._instance.run(work.job)
+    })
+
+    this._instance.on('failed_accessing_database', async (worker) => {
+      logger.error(
+        `[Bree] Failed accessing database for ${worker.name}: ${worker?.message?.issue ?? worker?.message ?? worker}`
+      )
+    })
+
+    this._instance.on('steam_limit_exceeded', async (worker) => {
+      logger.warn(`[Bree] steam limit exceeded for ${worker.name}`)
     })
   }
 }

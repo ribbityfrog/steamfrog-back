@@ -1,5 +1,4 @@
 import { workerData } from 'node:worker_threads'
-import { parentPort } from 'node:worker_threads'
 import process from 'node:process'
 
 import SteamApp from '#models/catalogues/steam_app'
@@ -8,15 +7,16 @@ import Wave from '#models/treatments/wave'
 import steamData from '#services/steam_data'
 
 import igniteApp from '#utils/ignite_app'
+import breeEmit from '#services/bree/emitter'
 
 const app = await igniteApp(workerData.appRootString)
-if (app === null) process.exit(1)
+if (app === null) breeEmit.failedIgnitingApp()
 
-const wave = await Wave.query().orderBy('wave', 'desc').where('step', 'enrich').first()
+const wave = await Wave.query()
+  .select('error')
+  .orderBy('wave', 'desc')
+  .where('step', 'enrich')
+  .first()
+  .catch((err) => breeEmit.failedAccessingDatabase(err.message))
 
-if (wave === null) process.exit(0)
-
-console.log(wave)
-
-if (parentPort) parentPort.postMessage('done')
-else process.exit(0)
+breeEmit.done()
