@@ -26,3 +26,5 @@ router
   .use(middleware.admin())
 
 AccountsRoutes()
+
+router.get('/check/:appid', [sandboxesController, 'check'])

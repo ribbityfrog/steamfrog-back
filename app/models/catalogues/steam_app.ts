@@ -25,13 +25,13 @@ export default class SteamApp extends BaseModel {
   @column()
   declare name: string
 
-  @column()
+  @column.dateTime()
   declare storeUpdatedAt: DateTime
 
-  @column()
+  @column.dateTime()
   declare storeLastlyUpdatedAt: DateTime
 
-  @column()
+  @column.dateTime()
   declare storePreviouslyUpdatedAt: DateTime
 
   @column()

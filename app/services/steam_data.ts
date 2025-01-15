@@ -21,7 +21,9 @@ class SteamData {
   }
 
   async getStorePage(appids: number): Promise<SteamStorePage | null> {
-    const result = await this._buildAndFetch('app', { appids })
+    let result = await this._buildAndFetch('app', { appids })
+
+    if (result?.[String(appids)]?.success === false) return { type: 'outer' }
 
     return result?.[String(appids)]?.data ?? null
   }

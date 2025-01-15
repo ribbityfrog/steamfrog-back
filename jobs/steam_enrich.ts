@@ -10,6 +10,8 @@ import breeEmit from '#services/bree/emitter'
 import type { SteamAchievement, SteamReviews, SteamStorePage } from '#services/steam_data/types'
 import { Achievement } from '#models/catalogues/types'
 
+// const timer = (ms: number) => new Promise((res) => setTimeout(res, ms))
+
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp()
 
@@ -21,25 +23,23 @@ const checkWave = await Wave.query()
 if (checkWave === null) breeEmit.done()
 const wave = checkWave!
 
-let ite = 0
-while (true && ite < 1) {
-  ite = ite + 1
-
+while (true) {
   const steamApps = await SteamApp.query()
     .where('isEnriched', false)
+    .andWhereNot('appType', 'outer')
+    .orderBy('id', 'asc')
     .limit(100)
     .catch((err) => breeEmit.failedAccessingDatabase(err.message))
 
   if (steamApps === null || steamApps === undefined || steamApps?.length === 0) break
 
   for (const steamApp of steamApps) {
-    console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt})`)
+    console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
 
     let storePage: SteamStorePage | undefined | null
     let achievements: SteamAchievement[] | undefined | null
     let reviews: SteamReviews | undefined | null
 
-    console.log(typeof steamApp.storeUpdatedAt)
     if (
       steamApp.appType === 'new' ||
       !steamApp.storeUpdatedAt.equals(steamApp.storePreviouslyUpdatedAt)
@@ -101,53 +101,56 @@ while (true && ite < 1) {
 
     if (storePage) {
       steamApp.appType = storePage.type
-      steamApp.parentGameId = storePage?.fullgame?.appid ?? null
 
-      steamApp.storePreviouslyUpdatedAt = steamApp.storeLastlyUpdatedAt
-      steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
+      if (storePage.type !== 'outer') {
+        steamApp.parentGameId = storePage?.fullgame?.appid ?? null
 
-      steamApp.isReleased = storePage.release_date.coming_soon
-      steamApp.releaseDate = storePage.release_date.date
+        steamApp.storePreviouslyUpdatedAt = steamApp.storeLastlyUpdatedAt
+        steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
 
-      steamApp.age = String(storePage.required_age)
+        steamApp.isReleased = storePage.release_date.coming_soon
+        steamApp.releaseDate = storePage.release_date.date
 
-      steamApp.platforms = {
-        windows: storePage.platforms.windows,
-        mac: storePage.platforms.mac,
-        linux: storePage.platforms.linux,
-      }
-      steamApp.controller = storePage?.controller_support ?? null
+        steamApp.age = String(storePage.required_age)
 
-      steamApp.developers = storePage.developers
-      steamApp.publishers = storePage.publishers
-      steamApp.categories = storePage.categories.map((category) => category.description)
-      steamApp.genres =
-        storePage?.genres === undefined ? [] : storePage.genres.map((genre) => genre.description)
-
-      steamApp.isFree = storePage.is_free
-      if (storePage.price_overview) {
-        steamApp.pricing = {
-          priceInitial: storePage.price_overview.initial,
-          priceFinal: storePage.price_overview.final,
-          priceDiscount: storePage.price_overview.discount_percent,
+        steamApp.platforms = {
+          windows: storePage.platforms.windows,
+          mac: storePage.platforms.mac,
+          linux: storePage.platforms.linux,
         }
-      }
+        steamApp.controller = storePage?.controller_support ?? null
 
-      if (storePage.metacritic) {
-        steamApp.metacritic = {
-          score: storePage.metacritic.score,
-          url: storePage.metacritic.url,
+        steamApp.developers = storePage.developers
+        steamApp.publishers = storePage.publishers
+        steamApp.categories = storePage.categories.map((category) => category.description)
+        steamApp.genres =
+          storePage?.genres === undefined ? [] : storePage.genres.map((genre) => genre.description)
+
+        steamApp.isFree = storePage.is_free
+        if (storePage.price_overview) {
+          steamApp.pricing = {
+            priceInitial: storePage.price_overview.initial,
+            priceFinal: storePage.price_overview.final,
+            priceDiscount: storePage.price_overview.discount_percent,
+          }
         }
-      }
 
-      steamApp.media = {
-        header: storePage.header_image,
-        screenshotCount: storePage?.screenshots?.length ?? 0,
-        videoCount: storePage?.movies?.length ?? 0,
+        if (storePage.metacritic) {
+          steamApp.metacritic = {
+            score: storePage.metacritic.score,
+            url: storePage.metacritic.url,
+          }
+        }
+
+        steamApp.media = {
+          header: storePage.header_image,
+          screenshotCount: storePage?.screenshots?.length ?? 0,
+          videoCount: storePage?.movies?.length ?? 0,
+        }
       }
     }
 
-    // steamApp.isEnriched = true
+    steamApp.isEnriched = true
     await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
   }
 }

@@ -32,7 +32,7 @@ if (lastWave === null)
 if (wave.step === 'enrich' || wave.step === 'stats') process.exit(0)
 
 while (true) {
-  const list = await steamData.getStoreList(wave.lastAppid, 1000)
+  const list = await steamData.getStoreList(wave.lastAppid, 10000)
 
   if (list === null) {
     breeEmit.steamLimitExceeded()
@@ -40,7 +40,7 @@ while (true) {
   }
 
   while (list?.apps?.length > 0) {
-    let iteStep = 100
+    let iteStep = 1000
 
     const sublist: Partial<SteamApp>[] = list.apps
       .splice(0, list.apps.length > iteStep ? iteStep : list.apps.length)

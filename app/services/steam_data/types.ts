@@ -34,48 +34,50 @@ export type SteamReviews = {
   total_reviews: number
 }
 
-export type SteamStorePage = {
-  type: 'game' | 'dlc'
-  fullgame?: {
-    appid: number
-  }
-  name: string
-  required_age: number | string
-  controller_support?: string
-  is_free: boolean | null
-  header_image: string
-  developers: string[]
-  publishers: string[]
-  price_overview?: {
-    initial: number
-    final: number
-    discount_percent: number
-  }
-  platforms: {
-    windows: boolean
-    mac: boolean
-    linux: boolean
-  }
-  metacritic?: {
-    score: number
-    url: string
-  }
-  categories: [
-    {
-      id: number | string
-      description: string
-    },
-  ]
-  genres?: [
-    {
-      id: number | string
-      description: string
-    },
-  ]
-  screenshots: any[]
-  movies: any[]
-  release_date: {
-    coming_soon: boolean
-    date: string
-  }
-}
+export type SteamStorePage =
+  | { type: 'outer' }
+  | {
+      type: 'game' | 'dlc'
+      fullgame?: {
+        appid: number
+      }
+      name: string
+      required_age: number | string
+      controller_support?: string
+      is_free: boolean | null
+      header_image: string
+      developers: string[]
+      publishers: string[]
+      price_overview?: {
+        initial: number
+        final: number
+        discount_percent: number
+      }
+      platforms: {
+        windows: boolean
+        mac: boolean
+        linux: boolean
+      }
+      metacritic?: {
+        score: number
+        url: string
+      }
+      categories: [
+        {
+          id: number | string
+          description: string
+        },
+      ]
+      genres?: [
+        {
+          id: number | string
+          description: string
+        },
+      ]
+      screenshots: any[]
+      movies: any[]
+      release_date: {
+        coming_soon: boolean
+        date: string
+      }
+    }
