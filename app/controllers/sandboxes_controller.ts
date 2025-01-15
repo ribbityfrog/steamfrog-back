@@ -5,11 +5,12 @@ import steamData from '#services/steam_data'
 
 export default class SandboxesController {
   async sand() {
-    // return await steamData.getAchievements(1868140)
+    // const achievements = await steamData.getAchievements(570)
+    // return achievements
+    return await SteamApp.findBy('id', 80)
     // return await steamData.getReviews(1868140)
-    return await steamData.getStorePage(1250410)
+    // return await steamData.getStorePage(220)
     // const steamApps = await SteamApp.all()
-
-    // return [steamApps.length, steamApps.slice(0, 10)]
+    // return [steamApps.length, steamApps]
   }
 }

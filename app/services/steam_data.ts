@@ -38,6 +38,8 @@ class SteamData {
       this.getSchema(gameid),
     ])
 
+    if (schemaParsedResult === undefined) return []
+
     if (achievementsResult.status === 403) return []
     else if (achievementsResult.status !== 200) return null
 
@@ -46,6 +48,8 @@ class SteamData {
     const achievements = achievementsParsedResult?.achievementpercentages?.achievements
 
     if (achievements === undefined || schemaParsedResult === null) return null
+
+    if (achievements.length === 0) return []
 
     return achievements
       .filter((achievement: any) => achievement !== null)
@@ -63,10 +67,11 @@ class SteamData {
       })
   }
 
-  async getSchema(appid: number): Promise<any | null> {
+  async getSchema(appid: number): Promise<any | null | undefined> {
     const result = await this._buildAndFetch('schema', { appid })
 
-    return result?.game?.availableGameStats?.achievements ?? null
+    if (result?.game) return result?.game?.availableGameStats?.achievements
+    return null
   }
 
   async _buildAndFetch(

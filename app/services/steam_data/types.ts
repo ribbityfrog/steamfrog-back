@@ -36,10 +36,13 @@ export type SteamReviews = {
 
 export type SteamStorePage = {
   type: 'game' | 'dlc'
+  fullgame?: {
+    appid: number
+  }
   name: string
   required_age: number | string
   controller_support?: string
-  is_free: boolean
+  is_free: boolean | null
   header_image: string
   developers: string[]
   publishers: string[]
@@ -63,7 +66,7 @@ export type SteamStorePage = {
       description: string
     },
   ]
-  genres: [
+  genres?: [
     {
       id: number | string
       description: string
@@ -73,6 +76,6 @@ export type SteamStorePage = {
   movies: any[]
   release_date: {
     coming_soon: boolean
-    date: number
+    date: string
   }
 }

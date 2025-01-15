@@ -32,7 +32,7 @@ if (lastWave === null)
 if (wave.step === 'enrich' || wave.step === 'stats') process.exit(0)
 
 while (true) {
-  const list = await steamData.getStoreList(wave.lastAppid)
+  const list = await steamData.getStoreList(wave.lastAppid, 1000)
 
   if (list === null) {
     breeEmit.steamLimitExceeded()
@@ -40,13 +40,14 @@ while (true) {
   }
 
   while (list?.apps?.length > 0) {
-    let iteStep = 1000
+    let iteStep = 100
 
     const sublist: Partial<SteamApp>[] = list.apps
       .splice(0, list.apps.length > iteStep ? iteStep : list.apps.length)
       .map((steamApp) => ({
         id: steamApp.appid,
         name: steamApp.name,
+        isEnriched: false,
         storeUpdatedAt: DateTime.fromSeconds(steamApp.last_modified),
       }))
 
@@ -61,11 +62,11 @@ while (true) {
     await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
   }
 
-  if (!list?.have_more_results) {
-    wave.step = 'enrich'
-    await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
-    break
-  }
+  // if (!list?.have_more_results) {
+  wave.step = 'enrich'
+  await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
+  break
+  // }
 }
 
 breeEmit.done()

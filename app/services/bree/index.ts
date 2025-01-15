@@ -1,19 +1,20 @@
 import env from '#start/env'
 import BreeInstance from 'bree'
+import Except from '#utils/except'
 import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
 import Wave from '#models/treatments/wave'
 
 export default class Bree {
   private _instance: BreeInstance
-  private _idReady: boolean = false
+  private _isReady: boolean = false
 
   get instance(): BreeInstance {
     return this._instance
   }
 
   get isReady(): boolean {
-    return this._idReady
+    return this._isReady
   }
 
   constructor() {
@@ -36,7 +37,7 @@ export default class Bree {
         },
         {
           name: 'steam_enrich',
-          timeout: '5 seconds',
+          timeout: '5 minutes',
         },
       ],
 
@@ -53,18 +54,18 @@ export default class Bree {
 
     if (worker === null) return
 
-    // await this._instance
-    //   .run(job)
-    //   .then(() => {
-    //     this._initEvents()
-    //     logger.info('[service] Bree - Started properly')
-    //     this._ready = true
-    //   })
-    //   .catch((error) =>
-    //     Except.serviceUnavailable('none', {
-    //       debug: { message: '[service] Bree - Failed to start', error },
-    //     })
-    //   )
+    await this._instance
+      .run(worker.job)
+      .then(() => {
+        this._initEvents()
+        logger.info('[service] Bree - Started properly')
+        this._isReady = true
+      })
+      .catch((error) =>
+        Except.serviceUnavailable('none', {
+          debug: { message: '[service] Bree - Failed to start', error },
+        })
+      )
   }
 
   private async _launchLogic(
@@ -113,7 +114,9 @@ export default class Bree {
     })
 
     this._instance.on('steam_limit_exceeded', async (worker) => {
-      logger.warn(`[Bree] steam limit exceeded for ${worker.name}`)
+      logger.warn(
+        `[Bree] steam limit exceeded in ${worker.name} for ${worker?.message?.data?.gameid}`
+      )
     })
   }
 }

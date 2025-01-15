@@ -13,11 +13,36 @@ export default class extends BaseSchema {
       table.integer('id').primary()
 
       table.enum('app_type', appTypes).notNullable().defaultTo('new')
-      table.string('name').notNullable()
+      table.integer('parent_game_id')
+      table.string('name', 511).notNullable()
 
       table.timestamp('store_updated_at').notNullable()
       table.timestamp('store_lastly_updated_at')
       table.timestamp('store_previously_updated_at')
+
+      table.boolean('is_enriched').notNullable().defaultTo(false)
+
+      table.jsonb('reviews')
+      table.specificType('achievements', 'jsonb[]')
+
+      table.boolean('is_released')
+      table.string('release_date')
+
+      table.string('age', 63)
+
+      table.jsonb('platforms')
+      table.string('controller', 63)
+
+      table.specificType('developers', 'varchar(255)[]').notNullable().defaultTo('{}')
+      table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
+      table.specificType('genres', 'varchar(255)[]').notNullable().defaultTo('{}')
+      table.specificType('categories', 'varchar(255)[]').notNullable().defaultTo('{}')
+
+      table.boolean('is_free')
+      table.jsonb('pricing')
+
+      table.jsonb('metacritic')
+      table.jsonb('media')
 
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
