@@ -1,4 +1,4 @@
-export const appTypes = ['new', 'game', 'dlc', 'outer'] as const
+export const appTypes = ['new', 'game', 'dlc', 'outer', 'broken'] as const
 export type AppType = (typeof appTypes)[number]
 
 export type Reviews = {

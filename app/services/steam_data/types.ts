@@ -8,6 +8,24 @@ export type SteamEndpoint = {
 
 export type SteamEndpointKeys = keyof typeof steamEndpoints
 
+export interface SteamDataReject {
+  success: false
+  status: number
+  statusText: string
+  endpointKey: SteamEndpointKeys
+  description?: string
+}
+
+export interface SteamDataResponse<T> {
+  success: true
+  endpointKey: SteamEndpointKeys
+  content: T
+}
+
+export type SteamResponseOrReject<T, B extends boolean> = B extends true
+  ? SteamDataResponse<T> | SteamDataReject
+  : SteamDataResponse<T>
+
 type SteamStoreListItem = {
   appid: number
   name: string
@@ -19,6 +37,14 @@ export type SteamStoreList = {
   last_appid?: number
 }
 
+export type SteamReviews = {
+  review_score: number
+  review_score_desc: string
+  total_positive: number
+  total_negative: number
+  total_reviews: number
+}
+
 export type SteamAchievement = {
   name: string
   description?: string
@@ -26,12 +52,10 @@ export type SteamAchievement = {
   percent: number
 }
 
-export type SteamReviews = {
-  review_score: number
-  review_score_desc: string
-  total_positive: number
-  total_negative: number
-  total_reviews: number
+export type SteamAchievementSchema = {
+  displayName: string
+  description: string
+  hidden: boolean
 }
 
 export type SteamStorePage =

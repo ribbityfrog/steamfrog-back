@@ -7,10 +7,16 @@ import steamData from '#services/steam_data'
 
 import igniteApp from '#utils/ignite_app'
 import breeEmit from '#services/bree/emitter'
-import type { SteamAchievement, SteamReviews, SteamStorePage } from '#services/steam_data/types'
+import type {
+  SteamAchievement,
+  SteamDataReject,
+  SteamDataResponse,
+  SteamReviews,
+  SteamStorePage,
+} from '#services/steam_data/types'
 import { Achievement } from '#models/catalogues/types'
 
-// const timer = (ms: number) => new Promise((res) => setTimeout(res, ms))
+const timer = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp()
@@ -19,7 +25,10 @@ const checkWave = await Wave.query()
   .orderBy('wave', 'desc')
   .where('step', 'enrich')
   .first()
-  .catch((err) => breeEmit.failedAccessingDatabase(err.message))
+  .catch((err) => {
+    breeEmit.failedAccessingDatabase(err.message)
+    return null
+  })
 if (checkWave === null) breeEmit.done()
 const wave = checkWave!
 
@@ -27,54 +36,75 @@ while (true) {
   const steamApps = await SteamApp.query()
     .where('isEnriched', false)
     .andWhereNot('appType', 'outer')
+    .andWhereNot('appType', 'broken')
     .orderBy('id', 'asc')
     .limit(100)
-    .catch((err) => breeEmit.failedAccessingDatabase(err.message))
+    .catch((err) => {
+      breeEmit.failedAccessingDatabase(err.message)
+      return null
+    })
 
-  if (steamApps === null || steamApps === undefined || steamApps?.length === 0) break
+  if (steamApps === null || steamApps?.length === 0) break
 
   for (const steamApp of steamApps) {
     console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
 
-    let storePage: SteamStorePage | undefined | null
-    let achievements: SteamAchievement[] | undefined | null
-    let reviews: SteamReviews | undefined | null
+    // let storePage: SteamStorePage | undefined | null
+    // let achievements: SteamAchievement[] | undefined | null
+    // let reviews: SteamReviews | undefined | null
 
-    if (
-      steamApp.appType === 'new' ||
-      !steamApp.storeUpdatedAt.equals(steamApp.storePreviouslyUpdatedAt)
-    ) {
-      if (steamApp.appType === 'new') {
-        storePage = await steamData.getStorePage(steamApp.id)
+    let storePage: SteamStorePage | undefined
 
-        if (storePage === null) breeEmit.steamLimitExceeded(steamApp.id)
-        else {
-          if (storePage.type === 'game')
-            [reviews, achievements] = await Promise.all([
-              steamData.getReviews(steamApp.id),
-              steamData.getAchievements(steamApp.id),
-            ])
-          else if (storePage.type === 'dlc') reviews = await steamData.getReviews(steamApp.id)
-        }
-      } else if (steamApp.appType === 'game')
-        [storePage, reviews, achievements] = await Promise.all([
-          steamData.getStorePage(steamApp.id),
-          steamData.getReviews(steamApp.id),
-          steamData.getAchievements(steamApp.id),
-        ])
-      else if (steamApp.appType === 'dlc')
-        [storePage, reviews] = await Promise.all([
-          steamData.getStorePage(steamApp.id),
-          steamData.getReviews(steamApp.id),
-        ])
-    } else {
-      if (steamApp.appType === 'dlc') reviews = await steamData.getReviews(steamApp.id)
-      else if (steamApp.appType === 'game')
-        [reviews, achievements] = await Promise.all([
-          steamData.getReviews(steamApp.id),
-          steamData.getAchievements(steamApp.id),
-        ])
+    try {
+      let storePageResponse = await steamData.getStorePage(steamApp.id)
+
+      storePage = storePageResponse.content
+    } catch (err) {
+      const reason = err as SteamDataReject
+      console.log(reason)
     }
+
+    console.log(storePage?.type)
+
+    await timer(1000)
+    breeEmit.done()
+
+    if (steamApp.appType === 'new')
+      if (
+        steamApp.appType === 'new' ||
+        !steamApp.storeUpdatedAt.equals(steamApp.storePreviouslyUpdatedAt)
+      ) {
+        if (steamApp.appType === 'new') {
+          storePage = await steamData.getStorePage(steamApp.id)
+
+          if (storePage === null) breeEmit.steamLimitExceeded(steamApp.id)
+          else {
+            if (storePage.type === 'game')
+              [reviews, achievements] = await Promise.all([
+                steamData.getReviews(steamApp.id),
+                steamData.getAchievements(steamApp.id),
+              ])
+            else if (storePage.type === 'dlc') reviews = await steamData.getReviews(steamApp.id)
+          }
+        } else if (steamApp.appType === 'game')
+          [storePage, reviews, achievements] = await Promise.all([
+            steamData.getStorePage(steamApp.id),
+            steamData.getReviews(steamApp.id),
+            steamData.getAchievements(steamApp.id),
+          ])
+        else if (steamApp.appType === 'dlc')
+          [storePage, reviews] = await Promise.all([
+            steamData.getStorePage(steamApp.id),
+            steamData.getReviews(steamApp.id),
+          ])
+      } else {
+        if (steamApp.appType === 'dlc') reviews = await steamData.getReviews(steamApp.id)
+        else if (steamApp.appType === 'game')
+          [reviews, achievements] = await Promise.all([
+            steamData.getReviews(steamApp.id),
+            steamData.getAchievements(steamApp.id),
+          ])
+      }
 
     if (storePage === null || reviews === null || achievements === null)
       breeEmit.steamLimitExceeded(steamApp.id)

@@ -2,7 +2,10 @@ import env from '#start/env'
 import steamEndpoints from '#services/steam_data/endpoints'
 import type {
   SteamAchievement,
+  SteamAchievementSchema,
+  SteamDataReject,
   SteamEndpointKeys,
+  SteamResponseOrReject,
   SteamReviews,
   SteamStoreList,
   SteamStorePage,
@@ -11,52 +14,83 @@ import type {
 class SteamData {
   private _apiKey = env.get('STEAM_KEY')
 
-  async getStoreList(
+  async getStoreList<B extends boolean = false>(
     last_appid: number = 0,
-    max_results: number = 10000
-  ): Promise<SteamStoreList | null> {
-    const result = await this._buildAndFetch('list', { last_appid, max_results })
+    max_results: number = 10000,
+    isThrowSafe: B = false as B
+  ): Promise<SteamResponseOrReject<SteamStoreList, B>> {
+    const result = await this._fetch('list', { last_appid, max_results }, isThrowSafe)
 
-    return result?.response ?? null
+    const data = result.data?.response ?? null
+    if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
+
+    return { success: true, endpointKey: 'list', content: data }
   }
 
-  async getStorePage(appids: number): Promise<SteamStorePage | null> {
-    let result = await this._buildAndFetch('app', { appids })
+  async getStorePage<B extends boolean = false>(
+    appids: number,
+    isThrowSafe: B = false as B
+  ): Promise<SteamResponseOrReject<SteamStorePage, B>> {
+    let result = await this._fetch('app', { appids }, isThrowSafe)
 
-    if (result?.[String(appids)]?.success === false) return { type: 'outer' }
+    if (result.data?.[String(appids)]?.success === false)
+      return {
+        success: true,
+        endpointKey: 'app',
+        content: { type: 'outer' },
+      }
 
-    return result?.[String(appids)]?.data ?? null
+    const data = result.data?.[String(appids)]?.data ?? null
+    if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
+
+    return {
+      success: true,
+      endpointKey: 'app',
+      content: data,
+    }
   }
 
-  async getReviews(gameid: number): Promise<SteamReviews | null> {
-    const result = await this._buildAndFetch('reviews', {}, String(gameid))
+  async getReviews<B extends boolean = false>(
+    gameid: number,
+    isThrowSafe: B = false as B
+  ): Promise<SteamResponseOrReject<SteamReviews, B>> {
+    const result = await this._fetch('reviews', {}, isThrowSafe, String(gameid))
 
-    return result?.query_summary ?? null
+    const data = result.data?.query_summary ?? null
+    if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
+
+    return { success: true, endpointKey: 'reviews', content: data }
   }
 
-  async getAchievements(gameid: number): Promise<SteamAchievement[] | null> {
-    const [achievementsResult, schemaParsedResult] = await Promise.all([
-      this._buildAndFetch('achievements', { gameid }, '', false),
-      this.getSchema(gameid),
-    ])
+  async getAchievements<B extends boolean = false>(
+    gameid: number,
+    isThrowSafe: B = false as B
+  ): Promise<SteamResponseOrReject<SteamAchievement[], B>> {
+    // const [achievementsResult, schemas] = await Promise.all([
+    //   this._fetch('achievements', { gameid }, isThrowSafe),
+    //   this.getAchievementSchema(gameid, true),
+    // ])
+    const schemas = await this.getAchievementSchema(gameid, true)
 
-    if (schemaParsedResult === undefined) return []
+    if (schemas.success === false) {
+      if (isThrowSafe) return schemas as SteamResponseOrReject<any, B>
+      else throw schemas
+    } else if (schemas.content.length === 0)
+      return { success: true, endpointKey: 'achievements', content: [] }
 
-    if (achievementsResult.status === 403) return []
-    else if (achievementsResult.status !== 200) return null
+    const achievementsResult = await this._fetch('achievements', { gameid }, isThrowSafe)
 
-    const achievementsParsedResult = await achievementsResult.json()
+    const achievements = achievementsResult.data?.achievementpercentages?.achievements
 
-    const achievements = achievementsParsedResult?.achievementpercentages?.achievements
-
-    if (achievements === undefined || schemaParsedResult === null) return null
-
-    if (achievements.length === 0) return []
+    if (achievements === null)
+      return this._issueHandler(achievements, isThrowSafe, 'Achievements not found')
+    else if (achievements.length === 0)
+      return { success: true, endpointKey: 'achievements', content: [] }
 
     return achievements
       .filter((achievement: any) => achievement !== null)
       .map((achievement: any) => {
-        const schema = schemaParsedResult.find((s: any) => s.name === achievement.name)
+        const schema = schemas.content.find((s: any) => s.name === achievement.name)
 
         if (schema === undefined) return null
 
@@ -69,31 +103,54 @@ class SteamData {
       })
   }
 
-  async getSchema(appid: number): Promise<any | null | undefined> {
-    const result = await this._buildAndFetch('schema', { appid })
+  async getAchievementSchema<B extends boolean = false>(
+    appid: number,
+    isThrowSafe: B = false as B
+  ): Promise<SteamResponseOrReject<SteamAchievementSchema[], B>> {
+    const result = await this._fetch('schema', { appid }, isThrowSafe)
 
-    if (result?.game) return result?.game?.availableGameStats?.achievements
-    return null
+    const data = result.data?.game?.availableGameStats?.achievements ?? []
+
+    return {
+      success: true,
+      endpointKey: 'schema',
+      content: data,
+    }
   }
 
-  async _buildAndFetch(
+  private async _fetch(
     endpointKey: SteamEndpointKeys,
     optionalParams: Record<string, string | boolean | number> = {},
+    safe: boolean = false,
     extraPath: string = '',
     parse: boolean = true
   ) {
     const endpoint = this._buildEndpoint(endpointKey, optionalParams, extraPath)
-    return await this._fetchEndpoint(endpoint, parse)
+    return await this._fetchEndpoint(endpoint, parse, safe, endpointKey)
   }
 
-  private async _fetchEndpoint(endpoint: string, parse: boolean = true): Promise<any | null> {
+  private async _fetchEndpoint(
+    endpoint: string,
+    parse: boolean = true,
+    safe: boolean = false,
+    endpointKey: SteamEndpointKeys
+  ): Promise<{ endpointKey: SteamEndpointKeys; response: Response; data: any }> {
     const response = await fetch(endpoint)
 
     if (parse) {
-      if (response.status !== 200) return null
+      if (response.status !== 200) {
+        if (safe) return { endpointKey, response, data: null }
+        else
+          throw {
+            success: false,
+            status: response.status,
+            statusText: response.statusText,
+            endpointKey,
+          } satisfies SteamDataReject
+      }
 
-      return await response.json()
-    } else return response
+      return { endpointKey, response, data: await response.json() }
+    } else return { endpointKey, response, data: undefined }
   }
 
   private _buildEndpoint(
@@ -117,6 +174,23 @@ class SteamData {
         ? '?' + params.map(([key, value]) => `${key}=${String(value)}`).join('&')
         : '')
     )
+  }
+
+  private _issueHandler<B extends boolean>(
+    issue: { endpointKey: SteamEndpointKeys; response: Response; data: any },
+    isThrowSafe: B,
+    description: string = 'none'
+  ): SteamResponseOrReject<any, B> {
+    const reason: SteamDataReject = {
+      success: false,
+      status: issue.response.status,
+      statusText: issue.response.statusText,
+      endpointKey: issue.endpointKey,
+      description,
+    }
+
+    if (isThrowSafe === true) return reason as SteamResponseOrReject<unknown, B>
+    throw reason
   }
 }
 

@@ -21,6 +21,10 @@ class BreeEmit {
     this.custom({ type: 'steam_limit_exceeded', data: { gameid } }, true)
   }
 
+  steamUnexpectedNull(gameid: number = -1, data?: any) {
+    this.custom({ type: 'steam_unexpected_null', issue: { gameid, data } }, false)
+  }
+
   custom(breeMessage: BreeMessage, stopExecution: boolean = false) {
     this.#emitter?.postMessage(breeMessage)
 

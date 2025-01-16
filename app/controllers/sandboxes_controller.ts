@@ -2,12 +2,13 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 import SteamApp from '#models/catalogues/steam_app'
 import steamData from '#services/steam_data'
+import Wave from '#models/treatments/wave'
 
 export default class SandboxesController {
   async sand() {
     const steamApps = await SteamApp.all()
 
-    return [steamApps.length, steamApps]
+    return [await Wave.query().select('wave', 'step', 'last_appid'), steamApps.length, steamApps]
   }
 
   async check({ params }: HttpContext) {
@@ -16,9 +17,9 @@ export default class SandboxesController {
     if (Number.isNaN(appid)) return 'The appid is not a valid number'
 
     return {
-      storePage: await steamData.getStorePage(params.appid),
-      reviews: await steamData.getReviews(params.appid),
-      achievements: await steamData.getAchievements(params.appid),
+      storePage: await steamData.getStorePage(params.appid, true),
+      reviews: await steamData.getReviews(params.appid, true),
+      achievements: await steamData.getAchievements(params.appid, true),
     }
   }
 }

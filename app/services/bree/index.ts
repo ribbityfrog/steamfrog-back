@@ -8,6 +8,7 @@ import Wave from '#models/treatments/wave'
 export default class Bree {
   private _instance: BreeInstance
   private _isReady: boolean = false
+  #foundBrokenGame = 0
 
   get instance(): BreeInstance {
     return this._instance
@@ -116,6 +117,12 @@ export default class Bree {
     this._instance.on('steam_limit_exceeded', async (worker) => {
       logger.warn(
         `[Bree] steam limit exceeded in ${worker.name} for ${worker?.message?.data?.gameid}`
+      )
+    })
+
+    this._instance.on('steam_unexpected_null', async (worker) => {
+      logger.warn(
+        `[Bree] steam unexpected error in ${worker.name} for ${worker?.message?.issue?.gameid} :`
       )
     })
   }
