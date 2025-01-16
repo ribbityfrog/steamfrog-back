@@ -9,6 +9,7 @@ import igniteApp from '#utils/ignite_app'
 import breeEmit from '#services/bree/emitter'
 
 import { DateTime } from 'luxon'
+import { SteamDataReject, SteamStoreList } from '#services/steam_data/types'
 
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp()
@@ -32,14 +33,20 @@ if (lastWave === null)
 if (wave.step === 'enrich' || wave.step === 'stats') process.exit(0)
 
 while (true) {
-  const list = await steamData.getStoreList(wave.lastAppid, 10000)
+  let list: SteamStoreList | undefined
 
-  if (list === null) {
-    breeEmit.steamLimitExceeded()
-    break
+  try {
+    const listResponse = await steamData.fetchStoreList(wave.lastAppid)
+    list = listResponse.content
+  } catch (issue) {
+    const reason = issue as SteamDataReject
+    if (reason.status === 429) breeEmit.steamLimitExceeded()
+    else breeEmit.steamUnexpectedError(-1, reason)
   }
 
-  while (list?.apps?.length > 0) {
+  if (list === undefined) process.exit(1)
+
+  while (list.apps?.length > 0) {
     let iteStep = 1000
 
     const sublist: Partial<SteamApp>[] = list.apps
@@ -69,4 +76,4 @@ while (true) {
   // }
 }
 
-breeEmit.done()
+process.exit(0)

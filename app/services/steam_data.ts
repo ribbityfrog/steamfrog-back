@@ -14,7 +14,7 @@ import type {
 class SteamData {
   private _apiKey = env.get('STEAM_KEY')
 
-  async getStoreList<B extends boolean = false>(
+  async fetchStoreList<B extends boolean = false>(
     last_appid: number = 0,
     max_results: number = 10000,
     isThrowSafe: B = false as B
@@ -27,7 +27,7 @@ class SteamData {
     return { success: true, endpointKey: 'list', content: data }
   }
 
-  async getStorePage<B extends boolean = false>(
+  async fetchStorePage<B extends boolean = false>(
     appids: number,
     isThrowSafe: B = false as B
   ): Promise<SteamResponseOrReject<SteamStorePage, B>> {
@@ -50,7 +50,7 @@ class SteamData {
     }
   }
 
-  async getReviews<B extends boolean = false>(
+  async fetchReviews<B extends boolean = false>(
     gameid: number,
     isThrowSafe: B = false as B
   ): Promise<SteamResponseOrReject<SteamReviews, B>> {
@@ -62,15 +62,11 @@ class SteamData {
     return { success: true, endpointKey: 'reviews', content: data }
   }
 
-  async getAchievements<B extends boolean = false>(
+  async fetchAchievements<B extends boolean = false>(
     gameid: number,
     isThrowSafe: B = false as B
   ): Promise<SteamResponseOrReject<SteamAchievement[], B>> {
-    // const [achievementsResult, schemas] = await Promise.all([
-    //   this._fetch('achievements', { gameid }, isThrowSafe),
-    //   this.getAchievementSchema(gameid, true),
-    // ])
-    const schemas = await this.getAchievementSchema(gameid, true)
+    const schemas = await this.fetchAchievementSchema(gameid, true)
 
     if (schemas.success === false) {
       if (isThrowSafe) return schemas as SteamResponseOrReject<any, B>
@@ -103,7 +99,7 @@ class SteamData {
       })
   }
 
-  async getAchievementSchema<B extends boolean = false>(
+  async fetchAchievementSchema<B extends boolean = false>(
     appid: number,
     isThrowSafe: B = false as B
   ): Promise<SteamResponseOrReject<SteamAchievementSchema[], B>> {

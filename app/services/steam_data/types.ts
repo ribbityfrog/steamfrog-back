@@ -16,7 +16,7 @@ export interface SteamDataReject {
   description?: string
 }
 
-export interface SteamDataResponse<T> {
+export interface SteamDataResponse<T = unknown> {
   success: true
   endpointKey: SteamEndpointKeys
   content: T

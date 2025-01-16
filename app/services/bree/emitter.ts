@@ -12,29 +12,23 @@ class BreeEmit {
     this.custom({ type: 'failed_igniting_app' }, true)
   }
 
-  failedAccessingDatabase(issue?: any) {
+  failedAccessingDatabase(issue?: any, stopExecution: boolean = true) {
     console.log(issue)
-    this.custom({ type: 'failed_accessing_database', issue }, true)
+    this.custom({ type: 'failed_accessing_database', issue }, stopExecution)
   }
 
-  steamLimitExceeded(gameid: number = -1) {
-    this.custom({ type: 'steam_limit_exceeded', data: { gameid } }, true)
+  steamLimitExceeded(gameid: number = -1, stopExecution: boolean = true) {
+    this.custom({ type: 'steam_limit_exceeded', data: { gameid } }, stopExecution)
   }
 
-  steamUnexpectedNull(gameid: number = -1, data?: any) {
-    this.custom({ type: 'steam_unexpected_null', issue: { gameid, data } }, false)
+  steamUnexpectedError(gameid: number = -1, data?: any) {
+    this.custom({ type: 'steam_unexpected_error', issue: { gameid, data } }, false)
   }
 
   custom(breeMessage: BreeMessage, stopExecution: boolean = false) {
     this.#emitter?.postMessage(breeMessage)
 
-    if (stopExecution) process.exit(0)
-    // if (stopExecution) this.done()
-  }
-
-  done() {
-    if (this.#emitter) this.#emitter.postMessage('done')
-    else process.exit(0)
+    if (stopExecution) process.exit(1)
   }
 }
 
