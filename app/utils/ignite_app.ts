@@ -20,7 +20,7 @@ export default async (
 
     return app
   } catch (error) {
-    discordMessage.custom('App Ignition failed')
+    await discordMessage.custom('App Ignition failed')
     // console.error('App Ignition failed', error)
     return null
   }

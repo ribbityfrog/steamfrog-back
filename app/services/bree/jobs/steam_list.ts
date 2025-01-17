@@ -12,8 +12,12 @@ import { DateTime } from 'luxon'
 import { SteamDataReject, SteamStoreList } from '#services/steam_data/types'
 import discordMessage from '#utils/discord_message'
 
+await discordMessage.custom('(worker_steam-enrich) Before creating the app')
+
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp(true)
+
+await discordMessage.custom('(worker_steam-enrich) After creating the app')
 
 const lastWave = await Wave.query()
   .orderBy('wave', 'desc')
@@ -24,7 +28,12 @@ const lastWave = await Wave.query()
 const newWave =
   lastWave !== null
     ? lastWave
-    : await Wave.create({}).catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
+    : await Wave.create({})
+        .then(async (wave) => {
+          await discordMessage.custom('(worker_steam-list) New wave has been started')
+          return wave
+        })
+        .catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
 
 const wave = newWave!
 
