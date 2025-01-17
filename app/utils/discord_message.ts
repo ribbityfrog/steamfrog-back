@@ -1,7 +1,6 @@
 import { SteamDataReject } from '#services/steam_data/types'
 import env from '#start/env'
 import { ExceptIntels } from '#utils/except/types'
-import { debug } from 'node:console'
 
 class DiscordMessage {
   #webhook = env.get('DISCORD_WEBHOOK')
