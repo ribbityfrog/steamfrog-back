@@ -12,6 +12,7 @@ import { middleware } from './kernel.js'
 
 // Routes
 import AccountsRoutes from '#routes/accounts'
+AccountsRoutes()
 
 router.get('/', () => 'Hello :)')
 router.get('/favicon.ico', () => 'Not a website ^^')
@@ -25,6 +26,11 @@ router
   .use(middleware.auth({ guards: ['api'] }))
   .use(middleware.admin())
 
-AccountsRoutes()
+const explorersController = () => import('#controllers/explorers_controller')
 
-router.get('/check/:appid', [sandboxesController, 'check'])
+router
+  .group(() => {
+    router.get('progress', [explorersController, 'progress'])
+    router.get('app/:appid', [explorersController, 'app'])
+  })
+  .prefix('explore')
