@@ -1,8 +1,26 @@
 import { SteamDataReject } from '#services/steam_data/types'
 import env from '#start/env'
+import { ExceptIntels } from '#utils/except/types'
 
 class DiscordMessage {
   #webhook = env.get('DISCORD_WEBHOOK')
+  #headtext = `[steamy-api_${env.get('NODE_ENV')}] `
+  #nodeEnv = env.get('NODE_ENV')
+
+  async exceptError(logs: {
+    intels: ExceptIntels
+    aborted: boolean
+    debug?: any
+    url?: string
+    stack?: string
+  }): Promise<void> {
+    await this.custom(
+      `[Except] ${logs.intels.status} (${logs.intels.code})}
+      Critial: ${logs.intels.critical} - Aborted: ${logs.aborted}
+      Message: ${logs.intels?.message}
+      URL: ${logs?.url}`
+    )
+  }
 
   async steamReject(steamReject: SteamDataReject | undefined, workerName?: string): Promise<void> {
     const message = !steamReject
@@ -23,8 +41,10 @@ class DiscordMessage {
     await this.custom(message)
   }
 
-  async custom(message: string): Promise<void> {
-    await this.#post(message)
+  async custom(message: string, preprod: boolean = true): Promise<void> {
+    if (preprod === false && this.#nodeEnv !== 'production') return
+
+    await this.#post(this.#headtext + message)
   }
 
   async #post(message: string): Promise<void> {

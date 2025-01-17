@@ -2,6 +2,7 @@ import { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import { ExceptIntels } from '#utils/except/types'
 import type { ExceptAbort } from '#utils/except/types'
+import discordMessage from '#utils/discord_message'
 
 type OptionalData = {
   debug?: any
@@ -74,7 +75,13 @@ export default class Except {
   }
 
   private _launch() {
-    const logs: any = {
+    const logs: {
+      intels: ExceptIntels
+      aborted: boolean
+      debug?: any
+      url?: string
+      stack?: string
+    } = {
       intels: this.intels,
       aborted: this.isAborted,
     }
@@ -90,6 +97,10 @@ export default class Except {
     if (this.intels.critical === true) logger.fatal(logs)
     else if (this.statusRange === 400) logger.warn(logs)
     else logger.error(logs)
+
+    if (this.statusRange === 500 || this.intels.critical) {
+      discordMessage.exceptError(logs)
+    }
 
     if (this.isAborted) {
       if (this.isHttpContext === false) throw this._intels

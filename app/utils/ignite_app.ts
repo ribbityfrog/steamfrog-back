@@ -1,6 +1,7 @@
 import { Ignitor } from '@adonisjs/core'
 import { ApplicationService } from '@adonisjs/core/types'
 import { AppEnvironments } from '@adonisjs/core/types/app'
+import discordMessage from '#utils/discord_message'
 
 export default async (
   rootUrl: URL | string,
@@ -19,7 +20,8 @@ export default async (
 
     return app
   } catch (error) {
-    console.error('App Ignition failed', error)
+    discordMessage.custom('App Ignition failed')
+    // console.error('App Ignition failed', error)
     return null
   }
 }

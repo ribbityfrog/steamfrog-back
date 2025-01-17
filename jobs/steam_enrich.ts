@@ -192,7 +192,7 @@ while (true) {
 
 wave.step = 'stats'
 await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
-await discordMessage.custom('[steamData] Steam enriching done')
+await discordMessage.custom('(steamData) Steam enriching done')
 
 await app!.terminate()
 process.exit(0)

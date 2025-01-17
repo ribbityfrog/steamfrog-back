@@ -2,6 +2,7 @@ import type { ApplicationService } from '@adonisjs/core/types'
 import Brevo from '#services/brevo/index'
 import Bree from '#services/bree/index'
 import Flydrive from '#services/flydrive/index'
+import discordMessage from '#utils/discord_message'
 
 export default class ThirdProvider {
   constructor(protected app: ApplicationService) {}
@@ -43,6 +44,7 @@ export default class ThirdProvider {
       .start()
       .then()
       .catch(() => {})
+    discordMessage.custom('(START-provider) third services ready', false)
   }
 
   /**

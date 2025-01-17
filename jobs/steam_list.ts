@@ -79,7 +79,7 @@ while (true) {
   // if (!list?.have_more_results) {
   wave.step = 'enrich'
   await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
-  await discordMessage.custom('[steamData] Steam listing done')
+  await discordMessage.custom('(steamData) Steam listing done')
   break
   // }
 }
