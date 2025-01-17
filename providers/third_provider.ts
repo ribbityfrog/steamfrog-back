@@ -39,11 +39,11 @@ export default class ThirdProvider {
    * The process has been started
    */
   async ready() {
-    const scheduler = await this.app.container.make(Bree)
-    await scheduler
-      .start()
-      .then()
-      .catch(() => {})
+    // const scheduler = await this.app.container.make(Bree)
+    // await scheduler
+    //   .start()
+    //   .then()
+    //   .catch(() => {})
     discordMessage.custom('(START-provider) third services ready', false)
   }
 
