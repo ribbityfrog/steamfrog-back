@@ -64,7 +64,7 @@ export default class Bree {
       })
       .catch((error) =>
         Except.serviceUnavailable('none', {
-          debug: { message: '[service] Bree - Failed to start', error },
+          debug: { message: `[service] Bree - Failed to start : ${error.message}`, error },
         })
       )
   }
