@@ -18,6 +18,7 @@ class DiscordMessage {
       `[Except] ${logs.intels.status} (${logs.intels.code})}
       Critial: ${logs.intels.critical} - Aborted: ${logs.aborted}
       Message: ${logs.intels?.message}
+      Debug message: ${typeof logs.debug === 'string' ? logs.debug : 'none'}
       URL: ${logs?.url}`
     )
   }
