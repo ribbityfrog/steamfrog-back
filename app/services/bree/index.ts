@@ -90,7 +90,7 @@ export default class Bree {
       return { mode: 'run', job: 'steam_enrich' }
     }
 
-    return { mode: 'start', job: 'steam_list' }
+    return null
   }
 
   private _initEvents() {
@@ -103,7 +103,7 @@ export default class Bree {
 
       const work = await this._launchLogic(name)
 
-      if (work === null) logger.error('[service] Bree - Failed stat next steam logic')
+      if (work === null) logger.error('[Bree] Steam workers ended')
       else if (work.mode === 'start') this._instance.start(work.job)
       else if (work.mode === 'run') this._instance.run(work.job)
     })
