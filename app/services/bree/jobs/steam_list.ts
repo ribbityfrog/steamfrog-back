@@ -11,13 +11,10 @@ import breeEmit from '#services/bree/emitter'
 import { DateTime } from 'luxon'
 import { SteamDataReject, SteamStoreList } from '#services/steam_data/types'
 import discordMessage from '#utils/discord_message'
-
-await discordMessage.custom('(worker_steam-enrich) Before creating the app')
+import env from '#start/env'
 
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp(true)
-
-await discordMessage.custom('(worker_steam-enrich) After creating the app')
 
 const lastWave = await Wave.query()
   .orderBy('wave', 'desc')
@@ -74,9 +71,10 @@ while (true) {
         storeUpdatedAt: DateTime.fromSeconds(steamApp.last_modified),
       }))
 
-    console.log(
-      `Insert from ${sublist[0].id} to ${sublist[sublist.length - 1].id}, ${sublist.length} new apps, ${list.apps.length} left`
-    )
+    if (env.get('NODE_ENV') !== 'production')
+      console.log(
+        `Insert from ${sublist[0].id} to ${sublist[sublist.length - 1].id}, ${sublist.length} new apps, ${list.apps.length} left`
+      )
 
     await SteamApp.updateOrCreateMany('id', sublist).catch((err) =>
       breeEmit.failedAccessingDatabase(err.message, true)

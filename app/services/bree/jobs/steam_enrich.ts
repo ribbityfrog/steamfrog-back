@@ -15,6 +15,7 @@ import type {
 } from '#services/steam_data/types'
 import { Achievement } from '#models/catalogues/types'
 import discordMessage from '#utils/discord_message'
+import env from '#start/env'
 
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp(true)
@@ -47,7 +48,8 @@ while (true) {
   if (steamApps === null || steamApps?.length === 0) break
 
   for (const steamApp of steamApps) {
-    console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
+    if (env.get('NODE_ENV') !== 'production')
+      console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
 
     let storePage: SteamStorePage | undefined
     let achievements: SteamAchievement[] | undefined
