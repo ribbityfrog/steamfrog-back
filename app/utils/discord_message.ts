@@ -1,6 +1,7 @@
 import { SteamDataReject } from '#services/steam_data/types'
 import env from '#start/env'
 import { ExceptIntels } from '#utils/except/types'
+import { debug } from 'node:console'
 
 class DiscordMessage {
   #webhook = env.get('DISCORD_WEBHOOK')
@@ -14,10 +15,16 @@ class DiscordMessage {
     url?: string
     stack?: string
   }): Promise<void> {
+    let debugMessage = ''
+
+    if (typeof logs?.debug?.message === 'string') debugMessage = logs?.debug?.message
+    else if (typeof logs?.debug === 'string') debugMessage = logs?.debug
+    else debugMessage = 'none'
+
     await this.custom(
       `[Except] ${logs.intels.status} (${logs.intels.code})}
       Critial: ${logs.intels.critical} - Aborted: ${logs.aborted}
-      Message: ${logs.intels?.message}
+      Message: ${debugMessage}
       Debug message: ${typeof logs.debug === 'string' ? logs.debug : 'none'}
       URL: ${logs?.url}`
     )
