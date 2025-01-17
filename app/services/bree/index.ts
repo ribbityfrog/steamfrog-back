@@ -4,6 +4,7 @@ import Except from '#utils/except'
 import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
 import Wave from '#models/treatments/wave'
+import discordMessage from '#utils/discord_message'
 
 export default class Bree {
   private _instance: BreeInstance
@@ -119,9 +120,17 @@ export default class Bree {
       )
     })
 
-    this._instance.on('steam_unexpected_error', async (worker) => {
+    this._instance.on('steam_unexpected_reject', async (worker) => {
+      discordMessage.steamReject(worker?.message?.issue?.data, worker.name)
       logger.warn(
-        `[Bree] steam unexpected error in ${worker.name} for ${worker?.message?.issue?.gameid} :`
+        `[Bree] steam unexpected error in ${worker.name} for ${worker?.message?.issue?.gameid}`
+      )
+    })
+
+    this._instance.on('steam_unexpected_error', async (worker) => {
+      discordMessage.steamError(worker?.message?.issue, worker.name)
+      logger.warn(
+        `[Bree] steam unexpected error in ${worker.name} for ${worker?.message?.issue?.gameid} : ${worker?.message?.issue?.message}`
       )
     })
   }

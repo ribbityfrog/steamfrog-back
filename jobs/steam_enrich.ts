@@ -14,6 +14,7 @@ import type {
   SteamStorePage,
 } from '#services/steam_data/types'
 import { Achievement } from '#models/catalogues/types'
+import discordMessage from '#utils/discord_message'
 
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp()
@@ -58,7 +59,8 @@ while (true) {
         else {
           steamApp.appType = 'broken'
           await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
-          breeEmit.steamUnexpectedError(steamApp.id, storePageResponse)
+          breeEmit.steamUnexpectedReject(steamApp.id, storePageResponse)
+          continue
         }
       }
     }
@@ -88,132 +90,104 @@ while (true) {
       if (err.status === 429) breeEmit.steamLimitExceeded(steamApp.id)
       else {
         steamApp.appType = 'broken'
-        breeEmit.steamUnexpectedError(steamApp.id, err)
+        await steamApp.save().catch((suberr) => breeEmit.failedAccessingDatabase(suberr.message))
+        breeEmit.steamUnexpectedReject(steamApp.id, err)
         continue
       }
       process.exit(1)
     }
 
-    // if (steamApp.appType === 'new')
-    //   if (
-    //     steamApp.appType === 'new' ||
-    //     !steamApp.storeUpdatedAt.equals(steamApp.storePreviouslyUpdatedAt)
-    //   ) {
-    //     if (steamApp.appType === 'new') {
-    //       storePage = await steamData.getStorePage(steamApp.id)
-
-    //       if (storePage === null) breeEmit.steamLimitExceeded(steamApp.id)
-    //       else {
-    //         if (storePage.type === 'game')
-    //           [reviews, achievements] = await Promise.all([
-    //             steamData.getReviews(steamApp.id),
-    //             steamData.getAchievements(steamApp.id),
-    //           ])
-    //         else if (storePage.type === 'dlc') reviews = await steamData.getReviews(steamApp.id)
-    //       }
-    //     } else if (steamApp.appType === 'game')
-    //       [storePage, reviews, achievements] = await Promise.all([
-    //         steamData.getStorePage(steamApp.id),
-    //         steamData.getReviews(steamApp.id),
-    //         steamData.getAchievements(steamApp.id),
-    //       ])
-    //     else if (steamApp.appType === 'dlc')
-    //       [storePage, reviews] = await Promise.all([
-    //         steamData.getStorePage(steamApp.id),
-    //         steamData.getReviews(steamApp.id),
-    //       ])
-    //   } else {
-    //     if (steamApp.appType === 'dlc') reviews = await steamData.getReviews(steamApp.id)
-    //     else if (steamApp.appType === 'game')
-    //       [reviews, achievements] = await Promise.all([
-    //         steamData.getReviews(steamApp.id),
-    //         steamData.getAchievements(steamApp.id),
-    //       ])
-    //   }
-
-    // if (storePage === null || reviews === null || achievements === null)
-    //   breeEmit.steamLimitExceeded(steamApp.id)
-
-    if (reviews)
-      steamApp.reviews = {
-        score: reviews.review_score,
-        scoreName: reviews.review_score_desc,
-        positiveCount: reviews.total_positive,
-        negativeCount: reviews.total_negative,
-        totalCount: reviews.total_reviews,
-      }
-
-    if (achievements)
-      steamApp.achievements =
-        achievements.length > 0
-          ? achievements.map(
-              (achievement) =>
-                ({
-                  name: achievement.name,
-                  description: achievement?.description ?? '',
-                  hidden: achievement.hidden,
-                  percent: achievement.percent,
-                }) satisfies Achievement
-            )
-          : []
-
-    if (storePage) {
-      steamApp.appType = storePage.type
-
-      steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
-      steamApp.storePreviouslyUpdatedAt = steamApp.storeLastlyUpdatedAt
-
-      if (storePage.type !== 'outer') {
-        steamApp.parentGameId = storePage?.fullgame?.appid ?? null
-
-        steamApp.isReleased = storePage.release_date.coming_soon
-        steamApp.releaseDate = storePage.release_date.date
-
-        steamApp.age = String(storePage.required_age)
-
-        steamApp.platforms = {
-          windows: storePage.platforms.windows,
-          mac: storePage.platforms.mac,
-          linux: storePage.platforms.linux,
+    try {
+      if (reviews)
+        steamApp.reviews = {
+          score: reviews.review_score,
+          scoreName: reviews.review_score_desc,
+          positiveCount: reviews.total_positive,
+          negativeCount: reviews.total_negative,
+          totalCount: reviews.total_reviews,
         }
-        steamApp.controller = storePage?.controller_support ?? null
 
-        steamApp.developers = storePage.developers
-        steamApp.publishers = storePage.publishers
-        steamApp.categories = storePage.categories.map((category) => category.description)
-        steamApp.genres =
-          storePage?.genres === undefined ? [] : storePage.genres.map((genre) => genre.description)
+      if (achievements)
+        steamApp.achievements =
+          achievements.length > 0
+            ? achievements.map(
+                (achievement) =>
+                  ({
+                    name: achievement.name,
+                    description: achievement?.description ?? '',
+                    hidden: achievement.hidden,
+                    percent: achievement.percent,
+                  }) satisfies Achievement
+              )
+            : []
 
-        steamApp.isFree = storePage.is_free
-        if (storePage.price_overview) {
-          steamApp.pricing = {
-            priceInitial: storePage.price_overview.initial,
-            priceFinal: storePage.price_overview.final,
-            priceDiscount: storePage.price_overview.discount_percent,
+      if (storePage) {
+        steamApp.appType = storePage.type
+
+        steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
+        steamApp.storePreviouslyUpdatedAt = steamApp.storeLastlyUpdatedAt
+
+        if (storePage.type !== 'outer') {
+          steamApp.parentGameId = storePage?.fullgame?.appid ?? null
+
+          steamApp.isReleased = storePage.release_date.coming_soon
+          steamApp.releaseDate = storePage.release_date.date
+
+          steamApp.age = String(storePage.required_age)
+
+          steamApp.platforms = {
+            windows: storePage.platforms.windows,
+            mac: storePage.platforms.mac,
+            linux: storePage.platforms.linux,
+          }
+          steamApp.controller = storePage?.controller_support ?? null
+
+          steamApp.developers = storePage.developers
+          steamApp.publishers = storePage.publishers
+          steamApp.categories =
+            storePage?.categories && storePage.categories.length > 0
+              ? storePage?.categories.map((category) => category.description)
+              : []
+          steamApp.genres =
+            storePage?.genres && storePage.genres.length > 0
+              ? storePage.genres.map((genre) => genre.description)
+              : []
+
+          steamApp.isFree = storePage.is_free
+          if (storePage.price_overview) {
+            steamApp.pricing = {
+              priceInitial: storePage.price_overview.initial,
+              priceFinal: storePage.price_overview.final,
+              priceDiscount: storePage.price_overview.discount_percent,
+            }
+          }
+
+          if (storePage.metacritic) {
+            steamApp.metacritic = {
+              score: storePage.metacritic.score,
+              url: storePage.metacritic.url,
+            }
+          }
+
+          steamApp.media = {
+            header: storePage.header_image,
+            screenshotCount: storePage?.screenshots?.length ?? 0,
+            videoCount: storePage?.movies?.length ?? 0,
           }
         }
-
-        if (storePage.metacritic) {
-          steamApp.metacritic = {
-            score: storePage.metacritic.score,
-            url: storePage.metacritic.url,
-          }
-        }
-
-        steamApp.media = {
-          header: storePage.header_image,
-          screenshotCount: storePage?.screenshots?.length ?? 0,
-          videoCount: storePage?.movies?.length ?? 0,
-        }
       }
+    } catch (err) {
+      breeEmit.steamUnexpectedError(steamApp.id, err)
+      steamApp.appType = 'broken'
     }
 
-    // steamApp.isEnriched = true
+    steamApp.isEnriched = true
     await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
   }
 }
 
 wave.step = 'stats'
 await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
+await discordMessage.custom('[steamData] Steam enriching done')
 
 process.exit(0)

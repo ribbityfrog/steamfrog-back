@@ -86,7 +86,7 @@ export type SteamStorePage =
         score: number
         url: string
       }
-      categories: [
+      categories?: [
         {
           id: number | string
           description: string

@@ -10,6 +10,7 @@ import breeEmit from '#services/bree/emitter'
 
 import { DateTime } from 'luxon'
 import { SteamDataReject, SteamStoreList } from '#services/steam_data/types'
+import discordMessage from '#utils/discord_message'
 
 const app = await igniteApp(workerData.appRootString)
 if (app === null) breeEmit.failedIgnitingApp()
@@ -41,7 +42,7 @@ while (true) {
   } catch (issue) {
     const reason = issue as SteamDataReject
     if (reason.status === 429) breeEmit.steamLimitExceeded()
-    else breeEmit.steamUnexpectedError(-1, reason)
+    else breeEmit.steamUnexpectedReject(-1, reason)
   }
 
   if (list === undefined) process.exit(1)
@@ -72,6 +73,7 @@ while (true) {
   // if (!list?.have_more_results) {
   wave.step = 'enrich'
   await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
+  await discordMessage.custom('[steamData] Steam listing done')
   break
   // }
 }

@@ -21,8 +21,12 @@ class BreeEmit {
     this.custom({ type: 'steam_limit_exceeded', data: { gameid } }, stopExecution)
   }
 
-  steamUnexpectedError(gameid: number = -1, data?: any) {
-    this.custom({ type: 'steam_unexpected_error', issue: { gameid, data } }, false)
+  steamUnexpectedReject(gameid: number = -1, data?: any) {
+    this.custom({ type: 'steam_unexpected_reject', issue: { gameid, data } }, false)
+  }
+
+  steamUnexpectedError(gameid: number = -1, message: string = 'Unknown error') {
+    this.custom({ type: 'steam_unexpected_error', issue: { gameid, message } }, false)
   }
 
   custom(breeMessage: BreeMessage, stopExecution: boolean = false) {
