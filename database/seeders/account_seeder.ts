@@ -8,22 +8,6 @@ export default class extends BaseSeeder {
         email: 'catch@preprod.tech',
         isAdmin: true,
       },
-      {
-        email: 'a@a.aa',
-      },
-      {
-        email: 'b@b.bb',
-      },
-      {
-        email: 'c@c.cc',
-        isAdmin: true,
-      },
-      {
-        email: 'd@d.dd',
-      },
-      {
-        email: 'e@e.ee',
-      },
     ])
   }
 }
