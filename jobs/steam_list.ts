@@ -13,25 +13,28 @@ import { SteamDataReject, SteamStoreList } from '#services/steam_data/types'
 import discordMessage from '#utils/discord_message'
 
 const app = await igniteApp(workerData.appRootString)
-if (app === null) breeEmit.failedIgnitingApp()
+if (app === null) breeEmit.failedIgnitingApp(true)
 
 const lastWave = await Wave.query()
   .orderBy('wave', 'desc')
   .whereNot('step', 'done')
   .first()
-  .catch((err) => breeEmit.failedAccessingDatabase(err.message))
+  .catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
 
 const newWave =
   lastWave !== null
     ? lastWave
-    : await Wave.create({}).catch((err) => breeEmit.failedAccessingDatabase(err.message))
+    : await Wave.create({}).catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
 
 const wave = newWave!
 
 if (lastWave === null)
-  await wave.refresh().catch((err) => breeEmit.failedAccessingDatabase(err.message))
+  await wave.refresh().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
 
-if (wave.step === 'enrich' || wave.step === 'stats') process.exit(0)
+if (wave.step === 'enrich' || wave.step === 'stats') {
+  await app!.terminate()
+  process.exit(0)
+}
 
 while (true) {
   let list: SteamStoreList | undefined
@@ -41,11 +44,14 @@ while (true) {
     list = listResponse.content
   } catch (issue) {
     const reason = issue as SteamDataReject
-    if (reason.status === 429) breeEmit.steamLimitExceeded()
-    else breeEmit.steamUnexpectedReject(-1, reason)
+    if (reason.status === 429) breeEmit.steamLimitExceeded(-1, true)
+    else breeEmit.steamUnexpectedReject(-1, reason, true)
   }
 
-  if (list === undefined) process.exit(1)
+  if (list === undefined) {
+    await app!.terminate()
+    process.exit(1)
+  }
 
   while (list.apps?.length > 0) {
     let iteStep = 1000
@@ -64,18 +70,19 @@ while (true) {
     )
 
     await SteamApp.updateOrCreateMany('id', sublist).catch((err) =>
-      breeEmit.failedAccessingDatabase(err.message)
+      breeEmit.failedAccessingDatabase(err.message, true)
     )
     wave.lastAppid = sublist[sublist.length - 1].id!
-    await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
+    await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
   }
 
   // if (!list?.have_more_results) {
   wave.step = 'enrich'
-  await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message))
+  await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
   await discordMessage.custom('[steamData] Steam listing done')
   break
   // }
 }
 
+await app!.terminate()
 process.exit(0)
