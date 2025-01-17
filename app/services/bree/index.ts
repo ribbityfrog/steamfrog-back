@@ -5,6 +5,8 @@ import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
 import Wave from '#models/treatments/wave'
 import discordMessage from '#utils/discord_message'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 export default class Bree {
   private _instance: BreeInstance
@@ -20,9 +22,9 @@ export default class Bree {
 
   constructor() {
     this._instance = new BreeInstance({
-      // root: path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs'),
+      root: path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs'),
 
-      defaultExtension: env.get('NODE_ENV', 'production') === 'production' ? 'ts' : 'ts',
+      defaultExtension: env.get('NODE_ENV', 'production') === 'production' ? 'js' : 'ts',
       logger: env.get('NODE_ENV', 'production') === 'production' ? false : console,
 
       worker: {
