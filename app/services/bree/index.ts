@@ -22,7 +22,7 @@ export default class Bree {
     this._instance = new BreeInstance({
       // root: path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs'),
 
-      defaultExtension: env.get('NODE_ENV', 'production') === 'production' ? 'js' : 'ts',
+      defaultExtension: env.get('NODE_ENV', 'production') === 'production' ? 'ts' : 'ts',
       logger: env.get('NODE_ENV', 'production') === 'production' ? false : console,
 
       worker: {
@@ -54,6 +54,8 @@ export default class Bree {
     const worker = await this._launchLogic()
 
     if (worker === null) return
+
+    console.log()
 
     await this._instance
       .run(worker.job)
