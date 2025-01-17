@@ -51,4 +51,44 @@ export default class SandboxesController {
       base: await SteamApp.findBy('id', appid),
     }
   }
+
+  // const results = await Database
+  // .from('your_table_name')
+  // .select(Database.raw(`
+  //     SUM(price) AS total_price,
+  //     SUM(CASE WHEN os->>'windows' = 'true' THEN price ELSE 0 END) AS total_windows,
+  //     SUM(CASE WHEN os->>'mac' = 'true' THEN price ELSE 0 END) AS total_mac,
+  //     SUM(CASE WHEN os->>'linux' = 'true' THEN price ELSE 0 END) AS total_linux,
+  //     COUNT(CASE WHEN app_type = 'game' THEN 1 END) AS game_count
+  // `));
+  async stats() {
+    const [total] = await db
+      .from(SteamApp.table)
+      .where('is_enriched', true)
+      .select(
+        db.raw(`
+      CAST(COUNT(CASE WHEN app_type = 'game' THEN 1 END) AS INTEGER) AS game_count,
+      CAST(COUNT(CASE WHEN app_type = 'dlc' THEN 1 END) AS INTEGER) AS dlc_count,
+      CAST(COUNT(CASE WHEN app_type = 'outer' THEN 1 END) AS INTEGER) AS outer_count,
+      CAST(SUM((pricing->>'priceInitial')::NUMERIC) / 100 AS INTEGER) AS price_initialSum,
+      CAST(SUM((pricing->>'priceFinal')::NUMERIC) / 100 AS INTEGER) AS price_finalSum
+      `)
+      )
+
+    const [platforms] = await db
+      .from(SteamApp.table)
+      .where('is_enriched', true)
+      .select(
+        db.raw(`
+        CAST(COUNT(CASE WHEN (platforms->>'windows')::BOOLEAN IS true AND app_type = 'game' THEN 1 END) AS INTEGER) AS windows_game_count,
+        CAST(COUNT(CASE WHEN (platforms->>'windows')::BOOLEAN IS true AND app_type = 'dlc' THEN 1 END) AS INTEGER) AS windows_dlc_count,
+        CAST(COUNT(CASE WHEN (platforms->>'mac')::BOOLEAN IS true AND app_type = 'game' THEN 1 END) AS INTEGER) AS mac_game_count,
+        CAST(COUNT(CASE WHEN (platforms->>'mac')::BOOLEAN IS true AND app_type = 'dlc' THEN 1 END) AS INTEGER) AS mac_dlc_count,
+        CAST(COUNT(CASE WHEN (platforms->>'linux')::BOOLEAN IS true AND app_type = 'game' THEN 1 END) AS INTEGER) AS linux_game_count,
+        CAST(COUNT(CASE WHEN (platforms->>'linux')::BOOLEAN IS true AND app_type = 'dlc' THEN 1 END) AS INTEGER) AS linux_dlc_count
+      `)
+      )
+
+    return { total, platforms }
+  }
 }

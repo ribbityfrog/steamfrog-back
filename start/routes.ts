@@ -32,5 +32,6 @@ router
   .group(() => {
     router.get('progress', [explorersController, 'progress'])
     router.get('app/:appid', [explorersController, 'app'])
+    router.get('stats', [explorersController, 'stats'])
   })
   .prefix('explore')
