@@ -3,6 +3,7 @@ import Brevo from '#services/brevo/index'
 import Bree from '#services/bree/index'
 import Flydrive from '#services/flydrive/index'
 import discordMessage from '#utils/discord_message'
+import env from '#start/env'
 
 export default class ThirdProvider {
   constructor(protected app: ApplicationService) {}
@@ -39,12 +40,14 @@ export default class ThirdProvider {
    * The process has been started
    */
   async ready() {
-    const scheduler = await this.app.container.make(Bree)
-    await scheduler
-      .start()
-      .then()
-      .catch(() => {})
-    discordMessage.custom('(START-provider) third services ready', false)
+    if (env.get('NODE_ENV', 'development') === 'production') {
+      const scheduler = await this.app.container.make(Bree)
+      await scheduler
+        .start()
+        .then()
+        .catch(() => {})
+      discordMessage.custom('(START-provider) Third services ready', false)
+    }
   }
 
   /**

@@ -79,7 +79,7 @@ export default class Bree {
     const wave = await Wave.query()
       .orderBy('wave', 'desc')
       .first()
-      .catch(() => logger.error('[service] Bree - Failed to get Wave and decide of the logic'))
+      .catch(() => logger.error('[service] Bree - Failed to get Wave to decide on the logic'))
 
     if (wave === undefined) return null
     if (wave === null) return { mode: 'run', job: 'steam_list' }

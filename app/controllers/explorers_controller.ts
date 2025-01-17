@@ -7,8 +7,12 @@ import db from '@adonisjs/lucid/services/db'
 
 export default class SandboxesController {
   async progress() {
-    const steamApps = await SteamApp.all()
-    const enrichedApps = await db.from(SteamApp.table).where('is_enriched', true).count('*')
+    const steamAppsExtract = await SteamApp.query()
+      .where('isEnriched', true)
+      .orderBy('id', 'desc')
+      .limit(10)
+    const steamAppsCount = await db.from(SteamApp.table).count('*')
+    const enrichedAppsCount = await db.from(SteamApp.table).where('is_enriched', true).count('*')
     const brokenApps = await SteamApp.query().where('app_type', 'broken')
     const outerApps = await SteamApp.query().where('app_type', 'outer')
     const debug = await SteamApp.query()
@@ -18,7 +22,6 @@ export default class SandboxesController {
 
     return {
       wave: await Wave.query().select('wave', 'step', 'last_appid').orderBy('wave', 'desc').first(),
-      enriched: enrichedApps[0].count,
       broken: {
         count: brokenApps.length,
         list: brokenApps,
@@ -28,8 +31,9 @@ export default class SandboxesController {
         list: outerApps,
       },
       apps: {
-        count: steamApps.length,
-        list: steamApps,
+        totalCount: Number(steamAppsCount[0].count),
+        enriched: Number(enrichedAppsCount[0].count),
+        last10Enriched: steamAppsExtract,
       },
       debug,
     }

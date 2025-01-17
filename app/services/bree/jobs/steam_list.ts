@@ -83,12 +83,12 @@ while (true) {
     await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
   }
 
-  // if (!list?.have_more_results) {
-  wave.step = 'enrich'
-  await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
-  await discordMessage.custom('(steamData) Steam listing done')
-  break
-  // }
+  if (!list?.have_more_results) {
+    wave.step = 'enrich'
+    await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
+    await discordMessage.custom('(steamData) Steam listing done')
+    break
+  }
 }
 
 await app!.terminate()
