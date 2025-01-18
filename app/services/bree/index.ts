@@ -57,8 +57,6 @@ export default class Bree {
 
     if (worker === null) return
 
-    console.log()
-
     await this._instance
       .run(worker.job)
       .then(() => {
@@ -107,8 +105,10 @@ export default class Bree {
 
       const work = await this._launchLogic(name)
 
-      if (work === null) logger.error('[Bree] Steam workers ended')
-      else if (work.mode === 'start') this._instance.start(work.job)
+      if (work === null) {
+        logger.error('[Bree] Steam workers ended')
+        discordMessage.custom('[Bree] Steam workers ended')
+      } else if (work.mode === 'start') this._instance.start(work.job)
       else if (work.mode === 'run') this._instance.run(work.job)
     })
 
