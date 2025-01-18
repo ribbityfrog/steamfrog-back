@@ -1,4 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import env from '#start/env'
 
 import SteamApp from '#models/catalogues/steam_app'
 import steamData from '#services/steam_data'
