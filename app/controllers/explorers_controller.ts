@@ -16,6 +16,7 @@ export default class SandboxesController {
     const enrichedAppsCount = await db.from(SteamApp.table).where('is_enriched', true).count('*')
     const brokenApps = await SteamApp.query().where('app_type', 'broken')
     const outerApps = await SteamApp.query().where('app_type', 'outer')
+    const trashedApps = await SteamApp.query().where('app_type', 'trash')
     const debug = await SteamApp.query()
       .where('isEnriched', true)
       .andWhereNull('releaseDate')
@@ -23,13 +24,19 @@ export default class SandboxesController {
 
     return {
       wave: await Wave.query().select('wave', 'step', 'last_appid').orderBy('wave', 'desc').first(),
-      broken: {
-        count: brokenApps.length,
-        list: brokenApps,
-      },
-      outer: {
-        count: outerApps.length,
-        list: outerApps,
+      badApples: {
+        broken: {
+          count: brokenApps.length,
+          list: brokenApps,
+        },
+        trash: {
+          count: trashedApps.length,
+          list: trashedApps,
+        },
+        outer: {
+          count: outerApps.length,
+          list: outerApps.map((outer) => outer.id),
+        },
       },
       apps: {
         totalCount: Number(steamAppsCount[0].count),
@@ -59,27 +66,15 @@ export default class SandboxesController {
       .where('is_enriched', true)
       .select(
         db.raw(`
-      CAST(COUNT(CASE WHEN app_type = 'game' THEN 1 END) AS INTEGER) AS game_count,
-      CAST(COUNT(CASE WHEN app_type = 'dlc' THEN 1 END) AS INTEGER) AS dlc_count,
-      CAST(COUNT(CASE WHEN app_type = 'outer' THEN 1 END) AS INTEGER) AS outer_count,
-      CAST(SUM((pricing->>'priceInitial')::NUMERIC) / 100 AS INTEGER) AS price_initialSum,
-      CAST(SUM((pricing->>'priceFinal')::NUMERIC) / 100 AS INTEGER) AS price_finalSum
+      (COUNT(CASE WHEN app_type = 'game' THEN 1 END))::integer AS game_count,
+      (COUNT(CASE WHEN app_type = 'dlc' THEN 1 END))::integer AS dlc_count,
+      (COUNT(CASE WHEN app_type = 'outer' THEN 1 END))::integer AS outer_count,
+      (SUM((pricing->>'priceInitial')::numeric) / 100)::integer AS price_initial_sum,
+      (SUM((pricing->>'priceFinal')::numeric) / 100)::integer AS price_final_sum
       `)
       )
 
-    const [platforms] = await db
-      .from(SteamApp.table)
-      .where('is_enriched', true)
-      .select(
-        db.raw(`
-        CAST(COUNT(CASE WHEN (platforms->>'windows')::BOOLEAN IS true AND app_type = 'game' THEN 1 END) AS INTEGER) AS windows_game_count,
-        CAST(COUNT(CASE WHEN (platforms->>'windows')::BOOLEAN IS true AND app_type = 'dlc' THEN 1 END) AS INTEGER) AS windows_dlc_count,
-        CAST(COUNT(CASE WHEN (platforms->>'mac')::BOOLEAN IS true AND app_type = 'game' THEN 1 END) AS INTEGER) AS mac_game_count,
-        CAST(COUNT(CASE WHEN (platforms->>'mac')::BOOLEAN IS true AND app_type = 'dlc' THEN 1 END) AS INTEGER) AS mac_dlc_count,
-        CAST(COUNT(CASE WHEN (platforms->>'linux')::BOOLEAN IS true AND app_type = 'game' THEN 1 END) AS INTEGER) AS linux_game_count,
-        CAST(COUNT(CASE WHEN (platforms->>'linux')::BOOLEAN IS true AND app_type = 'dlc' THEN 1 END) AS INTEGER) AS linux_dlc_count
-      `)
-      )
+    const platforms = await SteamApp.statsPlatforms()
 
     return { total, platforms }
   }
