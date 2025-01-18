@@ -4,6 +4,7 @@ import SteamApp from '#models/catalogues/steam_app'
 import steamData from '#services/steam_data'
 import Wave from '#models/treatments/wave'
 import db from '@adonisjs/lucid/services/db'
+import steamStats from '#services/steam_stats'
 
 export default class SandboxesController {
   async progress() {
@@ -82,7 +83,7 @@ export default class SandboxesController {
       `)
       )
 
-    const platforms = await SteamApp.statsPlatforms()
+    const platforms = await steamStats.statsPlatforms()
 
     return { total, platforms }
   }
