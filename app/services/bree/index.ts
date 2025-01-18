@@ -113,9 +113,10 @@ export default class Bree {
     })
 
     this._instance.on('failed_accessing_database', async (worker) => {
-      logger.error(
-        `[Bree] Failed accessing database for ${worker.name}: ${worker?.message?.issue ?? worker?.message ?? worker}`
-      )
+      const message = `[Bree] Failed accessing database for ${worker.name}: ${worker?.message?.issue ?? worker?.message ?? worker}`
+
+      logger.error(message)
+      discordMessage.custom(message)
     })
 
     this._instance.on('steam_limit_exceeded', async (worker) => {
@@ -125,17 +126,17 @@ export default class Bree {
     })
 
     this._instance.on('steam_unexpected_reject', async (worker) => {
-      discordMessage.steamReject(worker?.message?.issue?.data, worker.name)
       logger.warn(
-        `[Bree] steam unexpected error in ${worker.name} for ${worker?.message?.issue?.gameid}`
+        `[Bree] steam unexpected reject in ${worker.name} for ${worker?.message?.issue?.gameid}`
       )
+      discordMessage.steamReject(worker?.message?.issue?.data, worker.name)
     })
 
     this._instance.on('steam_unexpected_error', async (worker) => {
-      discordMessage.steamError(worker?.message?.issue, worker.name)
       logger.warn(
         `[Bree] steam unexpected error in ${worker.name} for ${worker?.message?.issue?.gameid} : ${worker?.message?.issue?.message}`
       )
+      discordMessage.steamError(worker?.message?.issue, worker.name)
     })
   }
 }

@@ -58,8 +58,15 @@ while (true) {
     if (steamApp.appType === 'new') {
       const storePageResponse = await steamData.fetchStorePage(steamApp.id, true)
 
-      if (storePageResponse.success === true) storePage = storePageResponse.content
-      else {
+      if (storePageResponse.success === true) {
+        storePage = storePageResponse.content
+
+        if (storePage?.type === 'trash') {
+          steamApp.appType = 'trash'
+          await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
+          continue
+        }
+      } else {
         if (storePageResponse.status === 429) breeEmit.steamLimitExceeded(steamApp.id, true)
         else {
           steamApp.appType = 'broken'
@@ -133,7 +140,7 @@ while (true) {
         steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
         steamApp.storePreviouslyUpdatedAt = steamApp.storeLastlyUpdatedAt
 
-        if (storePage.type !== 'outer') {
+        if (storePage.type === 'game' || storePage.type === 'dlc') {
           steamApp.parentGameId = storePage?.fullgame?.appid ?? null
 
           steamApp.isReleased = storePage.release_date.coming_soon

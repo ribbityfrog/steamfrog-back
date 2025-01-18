@@ -58,8 +58,12 @@ export type SteamAchievementSchema = {
   hidden: boolean
 }
 
+export function convertStringToAppType(appType: string): appType is 'game' | 'dlc' | 'outer' {
+  return ['game', 'dlc', 'outer'].includes(appType)
+}
+
 export type SteamStorePage =
-  | { type: 'outer' }
+  | { type: 'outer' | 'trash' }
   | {
       type: 'game' | 'dlc'
       fullgame?: {

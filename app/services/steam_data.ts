@@ -1,14 +1,15 @@
 import env from '#start/env'
 import steamEndpoints from '#services/steam_data/endpoints'
-import type {
-  SteamAchievement,
-  SteamAchievementSchema,
-  SteamDataReject,
-  SteamEndpointKeys,
-  SteamResponseOrReject,
-  SteamReviews,
-  SteamStoreList,
-  SteamStorePage,
+import {
+  convertStringToAppType,
+  type SteamAchievement,
+  type SteamAchievementSchema,
+  type SteamDataReject,
+  type SteamEndpointKeys,
+  type SteamResponseOrReject,
+  type SteamReviews,
+  type SteamStoreList,
+  type SteamStorePage,
 } from '#services/steam_data/types'
 
 class SteamData {
@@ -42,6 +43,9 @@ class SteamData {
 
     const data = result.data?.[String(appids)]?.data ?? null
     if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
+
+    if (convertStringToAppType(data.type) === false)
+      return { success: true, endpointKey: 'app', content: { type: 'trash' } }
 
     return {
       success: true,

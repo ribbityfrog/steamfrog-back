@@ -4,6 +4,7 @@ import SteamApp from '#models/catalogues/steam_app'
 import steamData from '#services/steam_data'
 import Wave from '#models/treatments/wave'
 import db from '@adonisjs/lucid/services/db'
+import env from '#start/env'
 
 export default class SandboxesController {
   async progress() {
@@ -52,15 +53,6 @@ export default class SandboxesController {
     }
   }
 
-  // const results = await Database
-  // .from('your_table_name')
-  // .select(Database.raw(`
-  //     SUM(price) AS total_price,
-  //     SUM(CASE WHEN os->>'windows' = 'true' THEN price ELSE 0 END) AS total_windows,
-  //     SUM(CASE WHEN os->>'mac' = 'true' THEN price ELSE 0 END) AS total_mac,
-  //     SUM(CASE WHEN os->>'linux' = 'true' THEN price ELSE 0 END) AS total_linux,
-  //     COUNT(CASE WHEN app_type = 'game' THEN 1 END) AS game_count
-  // `));
   async stats() {
     const [total] = await db
       .from(SteamApp.table)
@@ -90,5 +82,15 @@ export default class SandboxesController {
       )
 
     return { total, platforms }
+  }
+
+  async edit() {
+    if (env.get('NODE_ENV', 'production') !== 'development') return
+
+    const sApp = await SteamApp.findBy('id', 473930)
+    if (!sApp) return
+
+    sApp.appType = 'trash'
+    await sApp.save()
   }
 }
