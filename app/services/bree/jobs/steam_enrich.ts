@@ -23,8 +23,8 @@ const wave = await Wave.query()
   .orderBy('wave', 'desc')
   .where('step', 'enrich')
   .first()
-  .catch((err) => {
-    breeEmit.failedAccessingDatabase(err.message, true)
+  .catch(async (err) => {
+    await breeEmit.failedAccessingDatabase(err.message, true)
     return null
   })
 if (wave === null) {
@@ -40,8 +40,8 @@ while (true) {
     .andWhereNot('appType', 'trash')
     .orderBy('id', 'asc')
     .limit(200)
-    .catch((err) => {
-      breeEmit.failedAccessingDatabase(err.message, true)
+    .catch(async (err) => {
+      await breeEmit.failedAccessingDatabase(err.message, true)
       return null
     })
 
@@ -63,16 +63,20 @@ while (true) {
 
         if (storePage?.type === 'trash') {
           steamApp.appType = 'trash'
-          await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
+          await steamApp
+            .save()
+            .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
           discordMessage.custom(`[Enrich] Trash found : ${steamApp.id}`)
           continue
         }
       } else {
-        if (storePageResponse.status === 429) breeEmit.steamLimitExceeded(steamApp.id, true)
+        if (storePageResponse.status === 429) await breeEmit.steamLimitExceeded(steamApp.id, true)
         else {
           steamApp.appType = 'broken'
-          await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
-          breeEmit.steamUnexpectedReject(steamApp.id, storePageResponse)
+          await steamApp
+            .save()
+            .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+          await breeEmit.steamUnexpectedReject(steamApp.id, storePageResponse)
           continue
         }
       }
@@ -100,13 +104,13 @@ while (true) {
       achievements = steamResponses.find((response) => response.endpointKey === 'achievements')
         ?.content as SteamAchievement[]
     } catch (err) {
-      if (err.status === 429) breeEmit.steamLimitExceeded(steamApp.id, true)
+      if (err.status === 429) await breeEmit.steamLimitExceeded(steamApp.id, true)
       else {
         steamApp.appType = 'broken'
         await steamApp
           .save()
-          .catch((suberr) => breeEmit.failedAccessingDatabase(suberr.message, true))
-        breeEmit.steamUnexpectedReject(steamApp.id, err)
+          .catch(async (suberr) => await breeEmit.failedAccessingDatabase(suberr.message, true))
+        await breeEmit.steamUnexpectedReject(steamApp.id, err)
         continue
       }
     }
@@ -192,17 +196,19 @@ while (true) {
               )
             : []
     } catch (err) {
-      breeEmit.steamUnexpectedError(steamApp.id, err)
+      await breeEmit.steamUnexpectedError(steamApp.id, err)
       steamApp.appType = 'broken'
     }
 
     steamApp.isEnriched = true
-    await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
+    await steamApp
+      .save()
+      .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
   }
 }
 
 wave.step = 'stats'
-await wave.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
+await wave.save().catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 await discordMessage.custom('(steamData) Steam enriching done')
 
 await app!.terminate()

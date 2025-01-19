@@ -10,7 +10,12 @@ export default async (
 ): Promise<ApplicationService | null> => {
   const rootUrl = workerData.appRootString
 
-  if (isMainThread || !rootUrl) return null
+  if (isMainThread || !rootUrl) {
+    console.error(
+      '[WorkerApp] App is being used in the main thread, which is not expected and unsafe'
+    )
+    return null
+  }
 
   const appRoot = typeof rootUrl === 'string' ? new URL(rootUrl) : rootUrl
 
@@ -29,6 +34,3 @@ export default async (
     process.exit(1)
   }
 }
-
-// const app = await igniteApp(workerData.appRootString)
-// export { app as default }

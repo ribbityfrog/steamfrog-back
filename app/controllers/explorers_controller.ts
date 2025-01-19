@@ -61,31 +61,21 @@ export default class SandboxesController {
   }
 
   async stats() {
-    const [total] = await db
-      .from(SteamApp.table)
-      .where('is_enriched', true)
-      .select(
-        db.raw(`
-      (COUNT(CASE WHEN app_type = 'game' THEN 1 END))::integer AS game_count,
-      (COUNT(CASE WHEN app_type = 'dlc' THEN 1 END))::integer AS dlc_count,
-      (COUNT(CASE WHEN app_type = 'outer' THEN 1 END))::integer AS outer_count,
-      (SUM((pricing->>'priceInitial')::numeric) / 100)::integer AS price_initial_sum,
-      (SUM((pricing->>'priceFinal')::numeric) / 100)::integer AS price_final_sum
-      `)
-      )
-
+    const totals = await SteamApp.statsTotals()
     const platforms = await SteamApp.statsPlatforms()
+    const notOnWindows = await SteamApp.notOnWindows()
 
-    return { total, platforms }
+    return { totals, platforms, notOnWindows }
   }
 
   async edit() {
     if (env.get('NODE_ENV', 'production') !== 'development') return 'no edit in production'
 
-    // const sApp = await SteamApp.findBy('id', 473930)
+    // const sApp = await SteamApp.findBy('id', 500690)
     // if (!sApp) return 'nothing to edit'
 
-    // sApp.isEnriched = true
+    // sApp.isEnriched = false
+    // sApp.appType = 'new'
     // await sApp.save()
 
     // return sApp

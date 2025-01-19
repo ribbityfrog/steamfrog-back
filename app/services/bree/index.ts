@@ -41,7 +41,7 @@ export default class Bree {
         },
         {
           name: 'steam_enrich',
-          timeout: '5 minutes',
+          timeout: '4 minutes',
         },
       ],
 
@@ -54,7 +54,7 @@ export default class Bree {
       errorHandler: (error) => {
         this._errorCounter++
         logger.error(`[Bree] Error ${this._errorCounter} : ${error.message}`)
-        if (this._errorCounter < 3)
+        if (this._errorCounter <= 3)
           discordMessage.custom(
             `[Bree] Error ${this._errorCounter} : ${error.message}
             Stack: ${error.stack}

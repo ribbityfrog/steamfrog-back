@@ -89,6 +89,23 @@ export default class SteamApp extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
+  static async statsTotals() {
+    const [totals] = await db
+      .from(SteamApp.table)
+      .where('is_enriched', true)
+      .select(
+        db.raw(`
+        (COUNT(CASE WHEN app_type = 'game' THEN 1 END))::integer AS game_count,
+        (COUNT(CASE WHEN app_type = 'dlc' THEN 1 END))::integer AS dlc_count,
+        (COUNT(CASE WHEN app_type = 'outer' THEN 1 END))::integer AS outer_count,
+        (SUM((pricing->>'priceInitial')::numeric) / 100)::integer AS price_initial_sum,
+        (SUM((pricing->>'priceFinal')::numeric) / 100)::integer AS price_final_sum
+        `)
+      )
+
+    return totals
+  }
+
   static async statsPlatforms() {
     const [platforms] = await db
       .from(SteamApp.table)
@@ -138,5 +155,14 @@ export default class SteamApp extends BaseModel {
       )
 
     return platforms
+  }
+
+  static async notOnWindows() {
+    const games = await SteamApp.query()
+      .where('is_enriched', true)
+      .andWhere('app_type', 'game')
+      .andWhereRaw("(platforms->>'windows')::boolean IS false")
+
+    return { count: games.length, games }
   }
 }
