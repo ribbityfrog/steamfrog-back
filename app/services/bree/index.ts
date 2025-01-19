@@ -56,7 +56,9 @@ export default class Bree {
         logger.error(`[Bree] Error ${this._errorCounter} : ${error.message}`)
         if (this._errorCounter < 3)
           discordMessage.custom(
-            `[Bree] Error ${this._errorCounter} : ${error.message}${this._errorCounter === 3 ? '\nPrinting error stopped to avoid spam' : ''}`
+            `[Bree] Error ${this._errorCounter} : ${error.message}
+            Stack: ${error.stack}
+            ${this._errorCounter === 3 ? 'Printing error stopped to avoid spam' : ''}`
           )
       },
     })
