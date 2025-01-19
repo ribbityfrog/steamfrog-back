@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 export default class Bree {
   private _instance: BreeInstance
   private _isReady: boolean = false
+  private _errorCounter: number = 0
 
   get instance(): BreeInstance {
     return this._instance
@@ -48,6 +49,15 @@ export default class Bree {
         if (worker.message === 'done') return
         logger.info(`[Bree] Received ${worker.message.type} from ${worker.name}`)
         this._instance.emit(worker.message.type, worker)
+      },
+
+      errorHandler: (error) => {
+        this._errorCounter++
+        logger.error(`[Bree] Error ${this._errorCounter} : ${error.message}`)
+        if (this._errorCounter < 3)
+          discordMessage.custom(
+            `[Bree] Error ${this._errorCounter} : ${error.message}${this._errorCounter === 3 ? '\nPrinting error stopped to avoid spam' : ''}`
+          )
       },
     })
   }

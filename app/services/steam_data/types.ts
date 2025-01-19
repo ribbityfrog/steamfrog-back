@@ -63,7 +63,7 @@ export function convertStringToAppType(appType: string): appType is 'game' | 'dl
 }
 
 export type SteamStorePage =
-  | { type: 'outer' | 'trash' }
+  | { type: 'outer' | 'trash' | 'broken' }
   | {
       type: 'game' | 'dlc'
       fullgame?: {

@@ -1,24 +1,23 @@
-import { workerData } from 'node:worker_threads'
-
-import SteamApp from '#models/catalogues/steam_app'
-import Wave from '#models/treatments/wave'
+import igniteApp from '#utils/ignite_worker_app'
 
 import steamData from '#services/steam_data'
 
-import igniteApp from '#utils/ignite_app'
 import breeEmit from '#services/bree/emitter'
+import discordMessage from '#utils/discord_message'
+import env from '#start/env'
+
 import type {
   SteamAchievement,
   SteamDataResponse,
   SteamReviews,
   SteamStorePage,
 } from '#services/steam_data/types'
-import { Achievement } from '#models/catalogues/types'
-import discordMessage from '#utils/discord_message'
-import env from '#start/env'
+import type { Achievement } from '#models/catalogues/types'
 
-const app = await igniteApp(workerData.appRootString)
-if (app === null) breeEmit.failedIgnitingApp(true)
+const app = await igniteApp()
+
+const { default: SteamApp } = await import('#models/catalogues/steam_app')
+const { default: Wave } = await import('#models/treatments/wave')
 
 const wave = await Wave.query()
   .orderBy('wave', 'desc')
@@ -38,8 +37,9 @@ while (true) {
     .where('isEnriched', false)
     .andWhereNot('appType', 'outer')
     .andWhereNot('appType', 'broken')
+    .andWhereNot('appType', 'trash')
     .orderBy('id', 'asc')
-    .limit(100)
+    .limit(200)
     .catch((err) => {
       breeEmit.failedAccessingDatabase(err.message, true)
       return null
@@ -64,6 +64,7 @@ while (true) {
         if (storePage?.type === 'trash') {
           steamApp.appType = 'trash'
           await steamApp.save().catch((err) => breeEmit.failedAccessingDatabase(err.message, true))
+          discordMessage.custom(`[Enrich] Trash found : ${steamApp.id}`)
           continue
         }
       } else {
@@ -111,6 +112,63 @@ while (true) {
     }
 
     try {
+      if (storePage) {
+        steamApp.appType = storePage.type
+
+        steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
+        steamApp.storePreviouslyUpdatedAt = steamApp.storeLastlyUpdatedAt
+
+        if (steamApp.appType)
+          if (storePage.type === 'game' || storePage.type === 'dlc') {
+            steamApp.parentGameId = storePage?.fullgame?.appid ?? null
+
+            steamApp.isReleased = storePage.release_date.coming_soon
+            steamApp.releaseDate = storePage.release_date.date
+
+            steamApp.age = String(storePage.required_age)
+
+            steamApp.platforms = {
+              windows: storePage.platforms.windows,
+              mac: storePage.platforms.mac,
+              linux: storePage.platforms.linux,
+            }
+            steamApp.controller = storePage?.controller_support ?? null
+
+            steamApp.developers = storePage.developers
+            steamApp.publishers = storePage.publishers
+            steamApp.categories =
+              storePage?.categories && storePage.categories.length > 0
+                ? storePage?.categories.map((category) => category.description)
+                : []
+            steamApp.genres =
+              storePage?.genres && storePage.genres.length > 0
+                ? storePage.genres.map((genre) => genre.description)
+                : []
+
+            steamApp.isFree = storePage.is_free
+            if (storePage.price_overview) {
+              steamApp.pricing = {
+                priceInitial: storePage.price_overview.initial,
+                priceFinal: storePage.price_overview.final,
+                priceDiscount: storePage.price_overview.discount_percent,
+              }
+            }
+
+            if (storePage.metacritic) {
+              steamApp.metacritic = {
+                score: storePage.metacritic.score,
+                url: storePage.metacritic.url,
+              }
+            }
+
+            steamApp.media = {
+              header: storePage.header_image,
+              screenshotCount: storePage?.screenshots?.length ?? 0,
+              videoCount: storePage?.movies?.length ?? 0,
+            }
+          }
+      }
+
       if (reviews)
         steamApp.reviews = {
           score: reviews.review_score,
@@ -133,62 +191,6 @@ while (true) {
                   }) satisfies Achievement
               )
             : []
-
-      if (storePage) {
-        steamApp.appType = storePage.type
-
-        steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
-        steamApp.storePreviouslyUpdatedAt = steamApp.storeLastlyUpdatedAt
-
-        if (storePage.type === 'game' || storePage.type === 'dlc') {
-          steamApp.parentGameId = storePage?.fullgame?.appid ?? null
-
-          steamApp.isReleased = storePage.release_date.coming_soon
-          steamApp.releaseDate = storePage.release_date.date
-
-          steamApp.age = String(storePage.required_age)
-
-          steamApp.platforms = {
-            windows: storePage.platforms.windows,
-            mac: storePage.platforms.mac,
-            linux: storePage.platforms.linux,
-          }
-          steamApp.controller = storePage?.controller_support ?? null
-
-          steamApp.developers = storePage.developers
-          steamApp.publishers = storePage.publishers
-          steamApp.categories =
-            storePage?.categories && storePage.categories.length > 0
-              ? storePage?.categories.map((category) => category.description)
-              : []
-          steamApp.genres =
-            storePage?.genres && storePage.genres.length > 0
-              ? storePage.genres.map((genre) => genre.description)
-              : []
-
-          steamApp.isFree = storePage.is_free
-          if (storePage.price_overview) {
-            steamApp.pricing = {
-              priceInitial: storePage.price_overview.initial,
-              priceFinal: storePage.price_overview.final,
-              priceDiscount: storePage.price_overview.discount_percent,
-            }
-          }
-
-          if (storePage.metacritic) {
-            steamApp.metacritic = {
-              score: storePage.metacritic.score,
-              url: storePage.metacritic.url,
-            }
-          }
-
-          steamApp.media = {
-            header: storePage.header_image,
-            screenshotCount: storePage?.screenshots?.length ?? 0,
-            videoCount: storePage?.movies?.length ?? 0,
-          }
-        }
-      }
     } catch (err) {
       breeEmit.steamUnexpectedError(steamApp.id, err)
       steamApp.appType = 'broken'

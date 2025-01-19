@@ -5,7 +5,6 @@ import SteamApp from '#models/catalogues/steam_app'
 import steamData from '#services/steam_data'
 import Wave from '#models/treatments/wave'
 import db from '@adonisjs/lucid/services/db'
-import steamStats from '#services/steam_stats'
 
 export default class SandboxesController {
   async progress() {
@@ -75,7 +74,7 @@ export default class SandboxesController {
       `)
       )
 
-    const platforms = await steamStats.statsPlatforms()
+    const platforms = await SteamApp.statsPlatforms()
 
     return { total, platforms }
   }
@@ -86,7 +85,7 @@ export default class SandboxesController {
     const sApp = await SteamApp.findBy('id', 473930)
     if (!sApp) return
 
-    sApp.appType = 'trash'
+    sApp.isEnriched = true
     await sApp.save()
   }
 }

@@ -1,11 +1,7 @@
-import { workerData } from 'node:worker_threads'
-
-import SteamApp from '#models/catalogues/steam_app'
-import Wave from '#models/treatments/wave'
+import igniteApp from '#utils/ignite_worker_app'
 
 import steamData from '#services/steam_data'
 
-import igniteApp from '#utils/ignite_app'
 import breeEmit from '#services/bree/emitter'
 
 import { DateTime } from 'luxon'
@@ -13,8 +9,11 @@ import { SteamDataReject, SteamStoreList } from '#services/steam_data/types'
 import discordMessage from '#utils/discord_message'
 import env from '#start/env'
 
-const app = await igniteApp(workerData.appRootString)
-if (app === null) breeEmit.failedIgnitingApp(true)
+const app = await igniteApp()
+
+const { default: SteamApp } = await import('#models/catalogues/steam_app')
+const { default: Wave } = await import('#models/treatments/wave')
+type SteamAppType = InstanceType<typeof SteamApp>
 
 const lastWave = await Wave.query()
   .orderBy('wave', 'desc')
@@ -46,7 +45,7 @@ while (true) {
   let list: SteamStoreList | undefined
 
   try {
-    const listResponse = await steamData.fetchStoreList(wave.lastAppid)
+    const listResponse = await steamData.fetchStoreList(wave.lastAppid, 100)
     list = listResponse.content
   } catch (issue) {
     const reason = issue as SteamDataReject
@@ -60,9 +59,9 @@ while (true) {
   }
 
   while (list.apps?.length > 0) {
-    let iteStep = 1000
+    let iteStep = 10
 
-    const sublist: Partial<SteamApp>[] = list.apps
+    const sublist: Partial<SteamAppType>[] = list.apps
       .splice(0, list.apps.length > iteStep ? iteStep : list.apps.length)
       .map((steamApp) => ({
         id: steamApp.appid,
