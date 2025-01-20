@@ -71,7 +71,7 @@ export default class SandboxesController {
   async edit() {
     if (env.get('NODE_ENV', 'production') !== 'development') return 'no edit in production'
 
-    // const sApp = await SteamApp.findBy('id', 500690)
+    // const sApp = await SteamApp.findBy('id', 774161)
     // if (!sApp) return 'nothing to edit'
 
     // sApp.isEnriched = false

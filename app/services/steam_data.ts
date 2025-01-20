@@ -149,7 +149,12 @@ class SteamData {
           } satisfies SteamDataReject
       }
 
-      return { endpointKey, response, data: await response.json() }
+      try {
+        return { endpointKey, response, data: await response.json() }
+      } catch (err) {
+        console.log(err.message)
+        return { endpointKey, response, data: null }
+      }
     } else return { endpointKey, response, data: undefined }
   }
 
