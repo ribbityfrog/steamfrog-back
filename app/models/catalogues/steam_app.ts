@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, scope } from '@adonisjs/lucid/orm'
 import type {
   Achievement,
   AppType,
@@ -89,19 +89,77 @@ export default class SteamApp extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
+  static enrichedGame = scope((query) =>
+    query.where('is_enriched', true).andWhere('app_type', 'game')
+  )
+  static enrichedDlc = scope((query) =>
+    query.where('is_enriched', true).andWhere('app_type', 'dlc')
+  )
+  static enrichedGameOrDlc = scope((query) =>
+    query.where('is_enriched', true).andWhereIn('app_type', ['game', 'dlc'])
+  )
+
+  static async statsGames() {
+    const [
+      mostExpensiveGame,
+      mostExpensiveDlc,
+      mostPositiveGame,
+      mostPositiveDlc,
+      mostNegativeGame,
+      mostNegativeDlc,
+    ] = await Promise.all([
+      SteamApp.query()
+        .withScopes((scopes) => scopes.enrichedGame())
+        .andWhereNotNull('pricing')
+        .orderByRaw("(pricing->>'priceFinal')::numeric DESC")
+        .limit(3),
+      SteamApp.query()
+        .withScopes((scopes) => scopes.enrichedDlc())
+        .andWhereNotNull('pricing')
+        .orderByRaw("(pricing->>'priceFinal')::numeric DESC")
+        .limit(3),
+      SteamApp.query()
+        .withScopes((scopes) => scopes.enrichedGame())
+        .andWhereNotNull('reviews')
+        .orderByRaw("(reviews->>'positiveCount')::integer DESC")
+        .limit(3),
+      SteamApp.query()
+        .withScopes((scopes) => scopes.enrichedDlc())
+        .andWhereNotNull('reviews')
+        .orderByRaw("(reviews->>'positiveCount')::integer DESC")
+        .limit(3),
+      SteamApp.query()
+        .withScopes((scopes) => scopes.enrichedGame())
+        .andWhereNotNull('reviews')
+        .orderByRaw("(reviews->>'negativeCount')::integer DESC")
+        .limit(3),
+      SteamApp.query()
+        .withScopes((scopes) => scopes.enrichedDlc())
+        .andWhereNotNull('reviews')
+        .orderByRaw("(reviews->>'negativeCount')::integer DESC")
+        .limit(3),
+    ])
+
+    return {
+      mostExpensiveGame,
+      mostExpensiveDlc,
+      mostPositiveGame,
+      mostPositiveDlc,
+      mostNegativeGame,
+      mostNegativeDlc,
+    }
+  }
+
   static async statsTotals() {
-    const [totals] = await db
-      .from(SteamApp.table)
-      .where('is_enriched', true)
-      .select(
-        db.raw(`
+    const [totals] = await db.from(SteamApp.table).select(
+      db.raw(`
         (COUNT(CASE WHEN app_type = 'game' THEN 1 END))::integer AS game_count,
         (COUNT(CASE WHEN app_type = 'dlc' THEN 1 END))::integer AS dlc_count,
         (COUNT(CASE WHEN app_type = 'outer' THEN 1 END))::integer AS outer_count,
         (SUM((pricing->>'priceInitial')::numeric) / 100)::integer AS price_initial_sum,
         (SUM((pricing->>'priceFinal')::numeric) / 100)::integer AS price_final_sum
         `)
-      )
+    )
 
     return totals
   }
@@ -109,10 +167,9 @@ export default class SteamApp extends BaseModel {
   static async statsPlatforms() {
     const [platforms] = await db
       .from(SteamApp.table)
+      // .withScopes((scopes) => scopes.enrichedGameOrDlc())
       .where('is_enriched', true)
-      .andWhere((query) => {
-        query.where('app_type', 'game').orWhere('app_type', 'dlc')
-      })
+      .andWhereIn('app_type', ['game', 'dlc'])
       .select(
         db.raw(`
                 jsonb_build_object(
