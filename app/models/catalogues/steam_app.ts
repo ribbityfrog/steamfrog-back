@@ -99,6 +99,8 @@ export default class SteamApp extends BaseModel {
     query.where('is_enriched', true).andWhereIn('app_type', ['game', 'dlc'])
   )
 
+  static async statsStudios() {}
+
   static async statsGames() {
     const [
       mostExpensiveGame,
