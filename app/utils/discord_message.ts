@@ -29,10 +29,16 @@ class DiscordMessage {
     )
   }
 
-  async steamReject(steamReject: SteamDataReject | undefined, workerName?: string): Promise<void> {
+  async steamReject(
+    steamReject: SteamDataReject | undefined,
+    workerName?: string,
+    gameid?: number
+  ): Promise<void> {
     const message = !steamReject
       ? `[steamApp] Unexpected reject in ${workerName ?? 'unknown worker'}`
-      : `[steamApp] Unexpected reject in ${workerName}\n ${steamReject.status} in ${steamReject.endpointKey} - ${steamReject.statusText}\n ${steamReject.description}`
+      : `[steamApp] Unexpected reject in ${workerName}
+        ${steamReject.status} in ${steamReject.endpointKey} for ${gameid} - ${steamReject.statusText}
+        ${steamReject.description}`
 
     await this.custom(message)
   }

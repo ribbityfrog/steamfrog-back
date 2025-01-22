@@ -71,14 +71,14 @@ while (true) {
         }
       } else {
         if (storePageResponse.status === 429) await breeEmit.steamLimitExceeded(steamApp.id, true)
-        else {
+        else if (storePageResponse.status === 200) {
           steamApp.appType = 'broken'
           await steamApp
             .save()
             .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
           await breeEmit.steamUnexpectedReject(steamApp.id, storePageResponse)
           continue
-        }
+        } else await breeEmit.steamUnexpectedReject(steamApp.id, storePageResponse, true)
       }
     }
 

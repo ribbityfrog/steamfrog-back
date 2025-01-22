@@ -141,7 +141,11 @@ export default class Bree {
       logger.warn(
         `[Bree] steam unexpected reject in ${worker.name} for ${worker?.message?.issue?.gameid}`
       )
-      discordMessage.steamReject(worker?.message?.issue?.data, worker.name)
+      discordMessage.steamReject(
+        worker?.message?.issue?.data,
+        worker.name,
+        worker?.message?.issue?.gameid
+      )
     })
 
     this._instance.on('steam_unexpected_error', async (worker) => {
