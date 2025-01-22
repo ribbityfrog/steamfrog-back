@@ -14,13 +14,13 @@ export default class SandboxesController {
       .limit(10)
     const steamAppsCount = await db.from(SteamApp.table).count('*')
     const enrichedAppsCount = await db.from(SteamApp.table).where('is_enriched', true).count('*')
+    const outerAppsCount = await db.from(SteamApp.table).where('app_type', 'outer').count('*')
     const brokenApps = await SteamApp.query().where('app_type', 'broken')
-    const outerApps = await SteamApp.query().where('app_type', 'outer')
     const trashedApps = await SteamApp.query().where('app_type', 'trash')
-    const debug = await SteamApp.query()
-      .where('isEnriched', true)
-      .andWhereNull('releaseDate')
-      .andWhereNot('appType', 'outer')
+    // const debug = await SteamApp.query()
+    //   .where('isEnriched', true)
+    //   .andWhereNull('releaseDate')
+    //   .andWhereNot('appType', 'outer')
 
     return {
       wave: await Wave.query().select('wave', 'step', 'last_appid').orderBy('wave', 'desc').first(),
@@ -33,17 +33,14 @@ export default class SandboxesController {
           count: trashedApps.length,
           list: trashedApps,
         },
-        outer: {
-          count: outerApps.length,
-          list: outerApps.map((outer) => outer.id),
-        },
       },
       apps: {
         totalCount: Number(steamAppsCount[0].count),
-        enriched: Number(enrichedAppsCount[0].count),
+        enrichedCount: Number(enrichedAppsCount[0].count),
+        outerCount: Number(outerAppsCount[0].count),
         last10Enriched: steamAppsExtract,
       },
-      debug,
+      // debug,
     }
   }
 

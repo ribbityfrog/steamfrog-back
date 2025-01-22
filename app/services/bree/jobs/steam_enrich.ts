@@ -109,7 +109,9 @@ while (true) {
         steamApp.appType = 'broken'
         await steamApp
           .save()
-          .catch(async (suberr) => await breeEmit.failedAccessingDatabase(suberr.message, true))
+          .catch(
+            async (suberr: Error) => await breeEmit.failedAccessingDatabase(suberr.message, true)
+          )
         await breeEmit.steamUnexpectedReject(steamApp.id, err)
         continue
       }
@@ -129,7 +131,9 @@ while (true) {
             steamApp.isReleased = storePage.release_date.coming_soon
             steamApp.releaseDate = storePage.release_date.date
 
-            steamApp.age = String(storePage.required_age)
+            if (typeof storePage.required_age === 'string' && storePage.required_age.length > 63)
+              steamApp.age = '0'
+            else steamApp.age = String(storePage.required_age)
 
             steamApp.platforms = {
               windows: storePage.platforms.windows,
