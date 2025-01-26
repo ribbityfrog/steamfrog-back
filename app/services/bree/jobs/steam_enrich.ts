@@ -13,6 +13,7 @@ import type {
   SteamStorePage,
 } from '#services/steam_data/types'
 import type { Achievement } from '#models/catalogues/types'
+import { DateTime } from 'luxon'
 
 const app = await igniteApp()
 
@@ -35,9 +36,7 @@ if (wave === null) {
 while (true) {
   const steamApps = await SteamApp.query()
     .where('isEnriched', false)
-    .andWhereNot('appType', 'outer')
-    .andWhereNot('appType', 'broken')
-    .andWhereNot('appType', 'trash')
+    .andWhereNotIn('appType', ['outer', 'broken', 'trash'])
     .orderBy('id', 'asc')
     .limit(200)
     .catch(async (err) => {
@@ -128,19 +127,44 @@ while (true) {
           if (storePage.type === 'game' || storePage.type === 'dlc') {
             steamApp.parentGameId = storePage?.fullgame?.appid ?? null
 
-            steamApp.isReleased = storePage.release_date.coming_soon
-            steamApp.releaseDate = storePage.release_date.date
+            steamApp.isReleased = !storePage.release_date.coming_soon
 
-            if (typeof storePage.required_age === 'string' && storePage.required_age.length > 63)
-              steamApp.age = '0'
-            else steamApp.age = String(storePage.required_age)
+            const releaseDate = storePage.release_date.date
+            let parsedDate: DateTime | null
+            if (
+              !releaseDate ||
+              releaseDate.length === 0 ||
+              releaseDate === 'Coming soon' ||
+              releaseDate === 'To be announced'
+            )
+              parsedDate = null
+            else if (releaseDate.charAt(0) === 'Q')
+              parsedDate = DateTime.local(
+                +releaseDate.split(' ')[1],
+                +releaseDate.charAt(1) * 3,
+                1
+              ).endOf('quarter')
+            else if (releaseDate.split(' ').length === 1)
+              parsedDate = DateTime.fromFormat(releaseDate, 'yyyy').endOf('year')
+            else if (releaseDate.indexOf(',') !== -1)
+              parsedDate = DateTime.fromFormat(releaseDate, 'MMM d, yyyy')
+            else parsedDate = DateTime.fromFormat(releaseDate, 'MMMM yyyy').endOf('month')
+
+            if (!parsedDate?.isValid) {
+              console.log(releaseDate)
+              console.log(parsedDate?.invalidReason)
+            }
+            steamApp.releaseDate = parsedDate?.isValid === true ? parsedDate : null
+
+            const age = Number.parseInt(storePage?.required_age)
+            steamApp.age = Number.isNaN(age) ? 0 : age
 
             steamApp.platforms = {
               windows: storePage.platforms.windows,
               mac: storePage.platforms.mac,
               linux: storePage.platforms.linux,
             }
-            steamApp.controller = storePage?.controller_support ?? null
+            steamApp.hasControllerSupport = storePage?.controller_support === 'full' ? true : false
 
             steamApp.developers = storePage.developers
             steamApp.publishers = storePage.publishers

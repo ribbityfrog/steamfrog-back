@@ -47,17 +47,17 @@ export default class SteamApp extends BaseModel {
   @column()
   declare isReleased: boolean
 
-  @column()
-  declare releaseDate: string | null
+  @column.dateTime()
+  declare releaseDate: DateTime | null
 
   @column()
-  declare age: string
+  declare age: number
 
   @column()
   declare platforms: Platforms
 
   @column()
-  declare controller: string | null
+  declare hasControllerSupport: boolean
 
   @column()
   declare developers: string[]

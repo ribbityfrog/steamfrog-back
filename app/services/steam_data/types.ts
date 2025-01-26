@@ -70,7 +70,7 @@ export type SteamStorePage =
         appid: number
       }
       name: string
-      required_age: number | string
+      required_age: string
       controller_support?: string
       is_free: boolean | null
       header_image: string

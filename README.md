@@ -3,7 +3,8 @@
 Steamfrog is a Steam Store collector.<br>
 It collects info, reviews and achievements on all games and dlcs existing on the steam store.
 
-Be warned, this is my first ever open-source project
+Be warned, this is my first ever open-source project<br>
+Don't trust the main branch, I use it as a development branch for now. Preprod should be stable<br>
 
 It's a work in progress, but I did collected the whole store with it.
 
@@ -49,7 +50,7 @@ I added the following :
 - Steam Web API endpoints, obviously (read /app/services/steam_data*)
 - Discord Webhook to debug and collect progress (read /app/utils/discord_message.ts)
 
-***Database***
+***Database***<br>
 I use PostgreSQL with [Lucid ORM](https://lucid.adonisjs.com/docs/introduction "Lucid ORM Documentation") that comes with [Adonisjs](https://adonisjs.com/)
 
 ### Deployment

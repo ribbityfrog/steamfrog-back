@@ -17,10 +17,6 @@ export default class SandboxesController {
     const outerAppsCount = await db.from(SteamApp.table).where('app_type', 'outer').count('*')
     const brokenApps = await SteamApp.query().where('app_type', 'broken')
     const trashedApps = await SteamApp.query().where('app_type', 'trash')
-    // const debug = await SteamApp.query()
-    //   .where('isEnriched', true)
-    //   .andWhereNull('releaseDate')
-    //   .andWhereNot('appType', 'outer')
 
     return {
       wave: await Wave.query().select('wave', 'step', 'last_appid').orderBy('wave', 'desc').first(),
@@ -40,7 +36,6 @@ export default class SandboxesController {
         outerCount: Number(outerAppsCount[0].count),
         last10Enriched: steamAppsExtract,
       },
-      // debug,
     }
   }
 

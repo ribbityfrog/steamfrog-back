@@ -5,6 +5,7 @@ import { appTypes } from '#models/catalogues/types'
 export default class extends BaseSchema {
   protected schemaName = 'catalogues'
   protected tableName = 'steam_apps'
+  protected appTypesAllowed = appTypes.map((appType) => `'${appType}'`).join(', ')
 
   async up() {
     this.schema.createSchema(this.schemaName)
@@ -12,7 +13,8 @@ export default class extends BaseSchema {
     this.schema.withSchema(this.schemaName).createTable(this.tableName, (table) => {
       table.integer('id').primary()
 
-      table.enum('app_type', appTypes).notNullable().defaultTo('new')
+      table.string('app_type').notNullable().defaultTo('new')
+
       table.integer('parent_game_id')
       table.string('name', 511).notNullable()
 
@@ -26,12 +28,12 @@ export default class extends BaseSchema {
       table.specificType('achievements', 'jsonb[]')
 
       table.boolean('is_released')
-      table.string('release_date')
+      table.timestamp('release_date')
 
-      table.string('age', 63)
+      table.integer('age')
 
       table.jsonb('platforms')
-      table.string('controller', 63)
+      table.boolean('has_controller_support')
 
       table.specificType('developers', 'varchar(255)[]').notNullable().defaultTo('{}')
       table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
@@ -47,6 +49,12 @@ export default class extends BaseSchema {
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
     })
+    this.schema.raw(
+      `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT app_type_allowed CHECK (app_type IN (${this.appTypesAllowed}))`
+    )
+    this.schema.raw(
+      `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT age_limit CHECK (age >= 0)`
+    )
   }
 
   async down() {
