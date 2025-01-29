@@ -85,18 +85,19 @@ export function convertStringToAppType(appType: string): appType is 'game' | 'dl
 
 export type SteamAPIStoreItem = { item_type: number; id: number; appid: number; name: string } & (
   | {
-      item_type: Exclude<number, 0 | 4>
+      type?: Exclude<number, 0 | 4>
+      success?: Exclude<number, 1>
       visible: false
       unvailable_for_country_restriction?: true
-      success?: Exclude<number, 1>
     }
   | {
-      item_type: 0 | 4
+      type: 0 | 4
       success: 1
       visible: true
       is_free?: boolean
       related_items?: {
         demo_appid?: number[]
+        parent_appid?: number
       }
       tagids?: number[]
       categories?: {
