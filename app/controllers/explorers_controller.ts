@@ -49,17 +49,15 @@ export default class SandboxesController {
       itemPage: await steamData.fetchStoreItem([appid], true),
       reviews: await steamData.fetchReviews(appid, true),
       achievements: await steamData.fetchAchievements(appid, true),
-      base: await SteamApp.query().where('app_type', 'outer').orderBy('id', 'desc').first(),
     }
   }
 
   async stats() {
-    const totals = await SteamApp.statsTotals()
-    const games = await SteamApp.statsGames()
-    const platforms = await SteamApp.statsPlatforms()
-    const notOnWindows = await SteamApp.notOnWindows()
-
-    return { totals, games, platforms, notOnWindows }
+    // const totals = await SteamApp.statsTotals()
+    // const games = await SteamApp.statsGames()
+    // const platforms = await SteamApp.statsPlatforms()
+    // const notOnWindows = await SteamApp.notOnWindows()
+    // return { totals, games, platforms, notOnWindows }
   }
 
   async edit() {

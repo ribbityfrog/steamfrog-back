@@ -7,10 +7,10 @@ import discordMessage from '#utils/discord_message'
 import env from '#start/env'
 
 import type {
-  SteamAchievement,
+  SteamAPIAchievement,
   SteamDataResponse,
-  SteamReviews,
-  SteamAppDetails,
+  SteamAPIReviews,
+  SteamAPIAppDetails,
 } from '#services/steam_data/types'
 import type { Achievement } from '#models/catalogues/types'
 import { DateTime } from 'luxon'
@@ -50,9 +50,9 @@ while (true) {
     if (env.get('NODE_ENV') !== 'production')
       console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
 
-    let storePage: SteamAppDetails | undefined
-    let achievements: SteamAchievement[] | undefined
-    let reviews: SteamReviews | undefined
+    let storePage: SteamAPIAppDetails | undefined
+    let achievements: SteamAPIAchievement[] | undefined
+    let reviews: SteamAPIReviews | undefined
 
     if (steamApp.appType === 'new') {
       const storePageResponse = await steamData.fetchAppDetails(steamApp.id, true)
@@ -97,11 +97,11 @@ while (true) {
 
       if (!storePage)
         storePage = steamResponses.find((response) => response.endpointKey === 'app')
-          ?.content as SteamAppDetails
+          ?.content as SteamAPIAppDetails
       reviews = steamResponses.find((response) => response.endpointKey === 'reviews')
-        ?.content as SteamReviews
+        ?.content as SteamAPIReviews
       achievements = steamResponses.find((response) => response.endpointKey === 'achievements')
-        ?.content as SteamAchievement[]
+        ?.content as SteamAPIAchievement[]
     } catch (err) {
       if (err.status === 429) await breeEmit.steamLimitExceeded(steamApp.id, true)
       else {

@@ -11,6 +11,20 @@ const steamEndpoints = {
     },
     key: true,
   },
+  categories: {
+    route: 'https://api.steampowered.com/IStoreBrowseService/GetStoreCategories/v1/',
+    params: {
+      elanguage: 0,
+    },
+    key: true,
+  },
+  tags: {
+    route: 'https://api.steampowered.com/IStoreService/GetTagList/v1/',
+    params: {
+      language: 'english',
+    },
+    key: true,
+  },
   app: {
     route: 'https://store.steampowered.com/api/appdetails/',
     params: { cc: 'us' },

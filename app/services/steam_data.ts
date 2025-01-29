@@ -2,15 +2,17 @@ import env from '#start/env'
 import steamEndpoints from '#services/steam_data/endpoints'
 import type {
   SteamEndpoint,
-  SteamAchievement,
-  SteamAchievementSchema,
+  SteamAPIAchievement,
+  SteamAPIAchievementSchema,
   SteamDataReject,
   SteamEndpointKeys,
-  SteamResponseOrReject,
-  SteamReviews,
-  SteamStoreList,
-  SteamAppDetails,
-  SteamStoreItem,
+  SteamDataResponseOrReject,
+  SteamAPIReviews,
+  SteamAPIStoreList,
+  SteamAPIAppDetails,
+  SteamAPIStoreItem,
+  SteamAPICategory,
+  SteamAPITag,
 } from '#services/steam_data/types'
 import { convertStringToAppType } from '#services/steam_data/types'
 
@@ -21,7 +23,7 @@ class SteamData {
     last_appid: number = 0,
     max_results: number = 10000,
     isThrowSafe: B = false as B
-  ): Promise<SteamResponseOrReject<SteamStoreList, B>> {
+  ): Promise<SteamDataResponseOrReject<SteamAPIStoreList, B>> {
     const result = await this._fetch('list', { last_appid, max_results }, isThrowSafe)
 
     const data = result.data?.response ?? null
@@ -30,10 +32,32 @@ class SteamData {
     return { success: true, endpointKey: 'list', content: data }
   }
 
+  async fetchCategories<B extends boolean = false>(
+    isThrowSafe: B = false as B
+  ): Promise<SteamDataResponseOrReject<SteamAPICategory[], B>> {
+    const result = await this._fetch('categories', {}, isThrowSafe)
+
+    const data = result.data?.response?.categories ?? null
+    if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
+
+    return { success: true, endpointKey: 'categories', content: data }
+  }
+
+  async fetchTags<B extends boolean = false>(
+    isThrowSafe: B = false as B
+  ): Promise<SteamDataResponseOrReject<SteamAPITag[], B>> {
+    const result = await this._fetch('tags', {}, isThrowSafe)
+
+    const data = result.data?.response?.tags ?? null
+    if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
+
+    return { success: true, endpointKey: 'tags', content: data }
+  }
+
   async fetchAppDetails<B extends boolean = false>(
     appids: number,
     isThrowSafe: B = false as B
-  ): Promise<SteamResponseOrReject<SteamAppDetails, B>> {
+  ): Promise<SteamDataResponseOrReject<SteamAPIAppDetails, B>> {
     let result = await this._fetch('app', { appids }, isThrowSafe)
 
     if (result.data?.[String(appids)]?.success === false)
@@ -59,7 +83,7 @@ class SteamData {
   async fetchStoreItem<B extends boolean = false>(
     appids: number[],
     isThrowSafe: B = false as B
-  ): Promise<SteamResponseOrReject<SteamStoreItem[], B>> {
+  ): Promise<SteamDataResponseOrReject<SteamAPIStoreItem[], B>> {
     const mappedAppids = appids.map((appid) => ({ appid }))
 
     const result = await this._fetch('item', { ids: mappedAppids }, isThrowSafe)
@@ -76,7 +100,7 @@ class SteamData {
   async fetchReviews<B extends boolean = false>(
     gameid: number,
     isThrowSafe: B = false as B
-  ): Promise<SteamResponseOrReject<SteamReviews, B>> {
+  ): Promise<SteamDataResponseOrReject<SteamAPIReviews, B>> {
     const result = await this._fetch('reviews', {}, isThrowSafe, String(gameid))
 
     const data = result.data?.query_summary ?? null
@@ -88,11 +112,11 @@ class SteamData {
   async fetchAchievements<B extends boolean = false>(
     gameid: number,
     isThrowSafe: B = false as B
-  ): Promise<SteamResponseOrReject<SteamAchievement[], B>> {
+  ): Promise<SteamDataResponseOrReject<SteamAPIAchievement[], B>> {
     const schemas = await this.fetchAchievementSchema(gameid, true)
 
     if (schemas.success === false) {
-      if (isThrowSafe) return schemas as SteamResponseOrReject<any, B>
+      if (isThrowSafe) return schemas as SteamDataResponseOrReject<any, B>
       else throw schemas
     } else if (schemas.content.length === 0)
       return { success: true, endpointKey: 'achievements', content: [] }
@@ -106,26 +130,30 @@ class SteamData {
     else if (achievements.length === 0)
       return { success: true, endpointKey: 'achievements', content: [] }
 
-    return achievements
-      .filter((achievement: any) => achievement !== null)
-      .map((achievement: any) => {
-        const schema = schemas.content.find((s: any) => s.name === achievement.name)
+    return {
+      success: true,
+      endpointKey: 'achievements',
+      content: achievements
+        .filter((achievement: any) => achievement !== null)
+        .map((achievement: any) => {
+          const schema = schemas.content.find((s: any) => s.name === achievement.name)
 
-        if (schema === undefined) return null
+          if (schema === undefined) return null
 
-        return {
-          name: schema.displayName,
-          description: schema.description,
-          hidden: Boolean(schema.hidden),
-          percent: Math.round(achievement.percent * 100) / 100,
-        } satisfies SteamAchievement
-      })
+          return {
+            name: schema.displayName,
+            description: schema.description,
+            hidden: Boolean(schema.hidden),
+            percent: Math.round(achievement.percent * 100) / 100,
+          } satisfies SteamAPIAchievement
+        }),
+    }
   }
 
   async fetchAchievementSchema<B extends boolean = false>(
     appid: number,
     isThrowSafe: B = false as B
-  ): Promise<SteamResponseOrReject<SteamAchievementSchema[], B>> {
+  ): Promise<SteamDataResponseOrReject<SteamAPIAchievementSchema[], B>> {
     const result = await this._fetch('schema', { appid }, isThrowSafe)
 
     const data = result.data?.game?.availableGameStats?.achievements ?? []
@@ -218,7 +246,7 @@ class SteamData {
     issue: { endpointKey: SteamEndpointKeys; response: Response; data: any },
     isThrowSafe: B,
     description: string = 'none'
-  ): SteamResponseOrReject<any, B> {
+  ): SteamDataResponseOrReject<any, B> {
     const reason: SteamDataReject = {
       success: false,
       status: issue.response.status,
@@ -227,7 +255,7 @@ class SteamData {
       description,
     }
 
-    if (isThrowSafe === true) return reason as SteamResponseOrReject<unknown, B>
+    if (isThrowSafe === true) return reason as SteamDataResponseOrReject<unknown, B>
     throw reason
   }
 }

@@ -5,7 +5,7 @@ import steamData from '#services/steam_data'
 import breeEmit from '#services/bree/emitter'
 
 import { DateTime } from 'luxon'
-import { SteamDataReject, SteamStoreList } from '#services/steam_data/types'
+import { SteamDataReject, SteamAPIStoreList } from '#services/steam_data/types'
 import discordMessage from '#utils/discord_message'
 import env from '#start/env'
 
@@ -44,7 +44,7 @@ if (wave.step === 'enrich' || wave.step === 'stats') {
 }
 
 while (true) {
-  let list: SteamStoreList | undefined
+  let list: SteamAPIStoreList | undefined
 
   try {
     const listResponse = await steamData.fetchStoreList(wave.lastAppid, 100)

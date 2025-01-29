@@ -30,22 +30,35 @@ export interface SteamDataResponse<T = unknown> {
   content: T
 }
 
-export type SteamResponseOrReject<T, B extends boolean> = B extends true
+export type SteamDataResponseOrReject<T, B extends boolean> = B extends true
   ? SteamDataResponse<T> | SteamDataReject
   : SteamDataResponse<T>
 
-type SteamStoreListItem = {
+type SteamAPIStoreListItem = {
   appid: number
   name: string
   last_modified: number
 }
-export type SteamStoreList = {
-  apps: SteamStoreListItem[]
+export type SteamAPIStoreList = {
+  apps: SteamAPIStoreListItem[]
   have_more_results?: boolean
   last_appid?: number
 }
 
-export type SteamReviews = {
+export type SteamAPICategory = {
+  categoryid: number
+  type: number
+  display_name: string
+  image_url: string
+  edit_sort_order: number
+}
+
+export type SteamAPITag = {
+  tagid: number
+  name: string
+}
+
+export type SteamAPIReviews = {
   review_score: number
   review_score_desc: string
   total_positive: number
@@ -53,14 +66,14 @@ export type SteamReviews = {
   total_reviews: number
 }
 
-export type SteamAchievement = {
+export type SteamAPIAchievement = {
   name: string
   description?: string
   hidden: boolean
   percent: number
 }
 
-export type SteamAchievementSchema = {
+export type SteamAPIAchievementSchema = {
   displayName: string
   description: string
   hidden: boolean
@@ -70,9 +83,9 @@ export function convertStringToAppType(appType: string): appType is 'game' | 'dl
   return ['game', 'dlc', 'outer'].includes(appType)
 }
 
-export type SteamStoreItem = any
+export type SteamAPIStoreItem = any
 
-export type SteamAppDetails =
+export type SteamAPIAppDetails =
   | { type: 'outer' | 'trash' | 'broken' }
   | {
       type: 'game' | 'dlc'
