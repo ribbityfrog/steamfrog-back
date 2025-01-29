@@ -63,7 +63,11 @@ export default class SandboxesController {
     // const platforms = await SteamApp.statsPlatforms()
     // const notOnWindows = await SteamApp.notOnWindows()
 
-    return { totals, games }
+    return {
+      totals,
+      games,
+      outer: await SteamApp.query().select('id', 'name').where('app_type', 'outer'),
+    }
   }
 
   async edit() {
