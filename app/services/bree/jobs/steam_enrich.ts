@@ -10,7 +10,7 @@ import type {
   SteamAchievement,
   SteamDataResponse,
   SteamReviews,
-  SteamStorePage,
+  SteamAppDetails,
 } from '#services/steam_data/types'
 import type { Achievement } from '#models/catalogues/types'
 import { DateTime } from 'luxon'
@@ -50,12 +50,12 @@ while (true) {
     if (env.get('NODE_ENV') !== 'production')
       console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
 
-    let storePage: SteamStorePage | undefined
+    let storePage: SteamAppDetails | undefined
     let achievements: SteamAchievement[] | undefined
     let reviews: SteamReviews | undefined
 
     if (steamApp.appType === 'new') {
-      const storePageResponse = await steamData.fetchStorePage(steamApp.id, true)
+      const storePageResponse = await steamData.fetchAppDetails(steamApp.id, true)
 
       if (storePageResponse.success === true) {
         storePage = storePageResponse.content
@@ -87,7 +87,7 @@ while (true) {
       steamApp.appType !== 'new' &&
       !steamApp.storeUpdatedAt.equals(steamApp.storePreviouslyUpdatedAt)
     )
-      steamPromises.push(steamData.fetchStorePage(steamApp.id))
+      steamPromises.push(steamData.fetchAppDetails(steamApp.id))
 
     if (steamApp.appType === 'game' || (steamApp.appType === 'new' && storePage?.type === 'game'))
       steamPromises.push(steamData.fetchAchievements(steamApp.id))
@@ -97,7 +97,7 @@ while (true) {
 
       if (!storePage)
         storePage = steamResponses.find((response) => response.endpointKey === 'app')
-          ?.content as SteamStorePage
+          ?.content as SteamAppDetails
       reviews = steamResponses.find((response) => response.endpointKey === 'reviews')
         ?.content as SteamReviews
       achievements = steamResponses.find((response) => response.endpointKey === 'achievements')

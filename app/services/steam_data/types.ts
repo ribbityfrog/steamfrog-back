@@ -2,9 +2,17 @@ import steamEndpoints from '#services/steam_data/endpoints'
 
 export type SteamEndpoint = {
   route: string
-  params: Record<string, string | boolean | number>
   key: boolean
-}
+} & (
+  | {
+      params: Record<string, string | boolean | number | Object>
+      stringify: true
+    }
+  | {
+      params: Record<string, string | boolean | number>
+      stringify?: false | undefined
+    }
+)
 
 export type SteamEndpointKeys = keyof typeof steamEndpoints
 
@@ -62,7 +70,9 @@ export function convertStringToAppType(appType: string): appType is 'game' | 'dl
   return ['game', 'dlc', 'outer'].includes(appType)
 }
 
-export type SteamStorePage =
+export type SteamStoreItem = any
+
+export type SteamAppDetails =
   | { type: 'outer' | 'trash' | 'broken' }
   | {
       type: 'game' | 'dlc'

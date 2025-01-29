@@ -45,10 +45,11 @@ export default class SandboxesController {
     if (Number.isNaN(appid)) return 'The appid is not a valid number'
 
     return {
-      storePage: await steamData.fetchStorePage(appid, true),
+      appDetails: await steamData.fetchAppDetails(appid, true),
+      itemPage: await steamData.fetchStoreItem([appid], true),
       reviews: await steamData.fetchReviews(appid, true),
       achievements: await steamData.fetchAchievements(appid, true),
-      base: await SteamApp.findBy('id', appid),
+      base: await SteamApp.query().where('app_type', 'outer').orderBy('id', 'desc').first(),
     }
   }
 

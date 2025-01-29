@@ -16,6 +16,26 @@ const steamEndpoints = {
     params: { cc: 'us' },
     key: false,
   },
+  item: {
+    route: 'https://api.steampowered.com/IStoreBrowseService/GetItems/v1/',
+    params: {
+      context: {
+        country_code: 'us',
+      },
+      data_request: {
+        include_tag_count: true,
+        include_basic_info: true,
+        inluce_release: true,
+        include_platforms: true,
+        include_ratings: true,
+        include_screenshots: true,
+        include_trailets: true,
+        include_supported_languages: true,
+      },
+    },
+    key: true,
+    stringify: true,
+  },
   reviews: {
     route: 'https://store.steampowered.com/appreviews/',
     params: { json: 1, language: 'all' },

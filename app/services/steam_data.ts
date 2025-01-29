@@ -1,16 +1,18 @@
 import env from '#start/env'
 import steamEndpoints from '#services/steam_data/endpoints'
-import {
-  convertStringToAppType,
-  type SteamAchievement,
-  type SteamAchievementSchema,
-  type SteamDataReject,
-  type SteamEndpointKeys,
-  type SteamResponseOrReject,
-  type SteamReviews,
-  type SteamStoreList,
-  type SteamStorePage,
+import type {
+  SteamEndpoint,
+  SteamAchievement,
+  SteamAchievementSchema,
+  SteamDataReject,
+  SteamEndpointKeys,
+  SteamResponseOrReject,
+  SteamReviews,
+  SteamStoreList,
+  SteamAppDetails,
+  SteamStoreItem,
 } from '#services/steam_data/types'
+import { convertStringToAppType } from '#services/steam_data/types'
 
 class SteamData {
   private _apiKey = env.get('STEAM_KEY')
@@ -28,10 +30,10 @@ class SteamData {
     return { success: true, endpointKey: 'list', content: data }
   }
 
-  async fetchStorePage<B extends boolean = false>(
+  async fetchAppDetails<B extends boolean = false>(
     appids: number,
     isThrowSafe: B = false as B
-  ): Promise<SteamResponseOrReject<SteamStorePage, B>> {
+  ): Promise<SteamResponseOrReject<SteamAppDetails, B>> {
     let result = await this._fetch('app', { appids }, isThrowSafe)
 
     if (result.data?.[String(appids)]?.success === false)
@@ -50,6 +52,23 @@ class SteamData {
     return {
       success: true,
       endpointKey: 'app',
+      content: data,
+    }
+  }
+
+  async fetchStoreItem<B extends boolean = false>(
+    appids: number[],
+    isThrowSafe: B = false as B
+  ): Promise<SteamResponseOrReject<SteamStoreItem[], B>> {
+    const mappedAppids = appids.map((appid) => ({ appid }))
+
+    const result = await this._fetch('item', { ids: mappedAppids }, isThrowSafe)
+    const data = result.data?.response?.store_items ?? null
+    if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
+
+    return {
+      success: true,
+      endpointKey: 'item',
       content: data,
     }
   }
@@ -120,7 +139,7 @@ class SteamData {
 
   private async _fetch(
     endpointKey: SteamEndpointKeys,
-    optionalParams: Record<string, string | boolean | number> = {},
+    optionalParams: Record<string, string | boolean | number | Object> = {},
     safe: boolean = false,
     extraPath: string = '',
     parse: boolean = true
@@ -160,17 +179,31 @@ class SteamData {
 
   private _buildEndpoint(
     endpointKey: SteamEndpointKeys,
-    optionalParams: Record<string, string | boolean | number> = {},
+    optionalParams: Record<string, string | boolean | number | Object> = {},
     extraPath: string = ''
   ): string {
-    const ep = steamEndpoints[endpointKey]
+    const ep: SteamEndpoint = steamEndpoints[endpointKey]
 
     const apiKey = ep.key === true ? { key: this._apiKey } : {}
-    const params = Object.entries({
-      ...ep.params,
-      ...optionalParams,
-      ...apiKey,
-    })
+
+    let params: [string, string][] = []
+    if (ep?.stringify === true) {
+      const jsonParams = {
+        ...ep.params,
+        ...optionalParams,
+      }
+
+      params = Object.entries({
+        ...{ input_json: encodeURIComponent(JSON.stringify(jsonParams)) },
+        ...apiKey,
+      })
+    } else {
+      params = Object.entries({
+        ...ep.params,
+        ...optionalParams,
+        ...apiKey,
+      })
+    }
 
     return (
       ep.route +
