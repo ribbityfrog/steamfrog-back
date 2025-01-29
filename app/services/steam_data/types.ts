@@ -83,12 +83,66 @@ export function convertStringToAppType(appType: string): appType is 'game' | 'dl
   return ['game', 'dlc', 'outer'].includes(appType)
 }
 
-export type SteamAPIStoreItem = { item_type: number; id: number; name: string } & (
-  | { visible: false; unvailable_for_country_restriction?: true; success?: Exclude<number, 1> }
+export type SteamAPIStoreItem = { item_type: number; id: number; appid: number; name: string } & (
   | {
+      item_type: Exclude<number, 0 | 4>
+      visible: false
+      unvailable_for_country_restriction?: true
+      success?: Exclude<number, 1>
+    }
+  | {
+      item_type: 0 | 4
       success: 1
       visible: true
+      is_free?: boolean
+      related_items?: {
+        demo_appid?: number[]
+      }
       tagids?: number[]
+      categories?: {
+        supported_player_categoryids?: number[]
+        feature_categoryids?: number[]
+        controller_categoryids?: number[]
+      }
+      basic_info: {
+        short_description?: string
+        publishers?: { name: string }[]
+        developers?: { name: string }[]
+        franchises?: { name: string }[]
+      }
+      release: {
+        steam_release_date?: number
+        is_coming_soon?: boolean
+        is_early_access?: boolean
+        coming_soon_display?: 'date_year' | 'date_month' | 'date_quarter' | 'date_full' | string
+      }
+      platforms: Record<string, boolean | Record<string, boolean>> & {
+        steam_deck_compat_category: number
+      }
+      game_rating?: {
+        type: string
+        rating: string
+        descriptors: string[]
+        required_age: number
+        use_age_gate: boolean
+      }
+      best_purchase_option?: {
+        final_price_in_cents: string
+        original_price_in_cents?: string
+        discount_pct?: number
+      }
+      screenshots?: {
+        all_ages_screenshots?: unknown[]
+      }
+      trailers?: {
+        highlights?: unknown[]
+      }
+      supported_languages?: {
+        elanguage: number
+        supported: boolean
+        full_audio: boolean
+        subtitles: boolean
+      }[]
     }
 )
 
