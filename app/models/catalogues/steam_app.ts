@@ -114,7 +114,7 @@ export default class SteamApp extends BaseModel {
         .withScopes((scopes) => scopes.enrichedGame())
         .andWhereNotNull('pricing')
         .orderByRaw("(pricing->>'priceFinal')::numeric DESC")
-        .limit(3),
+        .limit(10),
       SteamApp.query()
         .withScopes((scopes) => scopes.enrichedDlc())
         .andWhereNotNull('pricing')

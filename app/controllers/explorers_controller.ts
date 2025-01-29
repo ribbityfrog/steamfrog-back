@@ -60,10 +60,10 @@ export default class SandboxesController {
   async stats() {
     const totals = await SteamApp.statsTotals()
     const games = await SteamApp.statsGames()
-    const platforms = await SteamApp.statsPlatforms()
-    const notOnWindows = await SteamApp.notOnWindows()
+    // const platforms = await SteamApp.statsPlatforms()
+    // const notOnWindows = await SteamApp.notOnWindows()
 
-    return { totals, games, platforms, notOnWindows }
+    return { totals, games }
   }
 
   async edit() {
