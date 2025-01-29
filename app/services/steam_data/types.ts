@@ -83,7 +83,14 @@ export function convertStringToAppType(appType: string): appType is 'game' | 'dl
   return ['game', 'dlc', 'outer'].includes(appType)
 }
 
-export type SteamAPIStoreItem = any
+export type SteamAPIStoreItem = { item_type: number; id: number; name: string } & (
+  | { visible: false; unvailable_for_country_restriction?: true; success?: Exclude<number, 1> }
+  | {
+      success: 1
+      visible: true
+      tagids?: number[]
+    }
+)
 
 export type SteamAPIAppDetails =
   | { type: 'outer' | 'trash' | 'broken' }
