@@ -114,7 +114,7 @@ export type SteamAPIStoreItem = { item_type: number; id: number; appid: number; 
         steam_release_date?: number
         is_coming_soon?: boolean
         is_early_access?: boolean
-        coming_soon_display?: 'date_year' | 'date_month' | 'date_quarter' | 'date_full' | string
+        coming_soon_display?: 'date_year' | 'date_quarter' | 'date_month' | 'date_full' | string
       }
       platforms: Record<string, boolean | Record<string, boolean>> & {
         steam_deck_compat_category: number
