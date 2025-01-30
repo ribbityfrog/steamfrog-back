@@ -87,46 +87,48 @@ export default class Bree {
       )
   }
 
-  private async _launchLogic(
-    stoppedJob?: string
-  ): Promise<{ mode: 'run' | 'start'; job: string } | null> {
-    const wave = await Wave.query()
-      .orderBy('wave', 'desc')
-      .first()
-      .catch(() => logger.error('[service] Bree - Failed to get Wave to decide on the logic'))
+  // private async _launchLogic(
+  //   stoppedJob?: string
+  // ): Promise<{ mode: 'run' | 'start'; job: string } | null> {
+  //   const wave = await Wave.query()
+  //     .orderBy('wave', 'desc')
+  //     .first()
+  //     .catch(() => logger.error('[service] Bree - Failed to get Wave to decide on the logic'))
 
-    if (wave === undefined) return null
-    if (wave === null) return { mode: 'run', job: 'steam_list' }
+  //   if (wave === undefined) return null
+  //   if (wave === null) return { mode: 'run', job: 'steam_list' }
 
-    if (wave.step === 'list') {
-      if (stoppedJob === 'steam_list') return { mode: 'start', job: 'steam_list' }
-      return { mode: 'run', job: 'steam_list' }
-    }
+  //   if (wave.step === 'list') {
+  //     if (stoppedJob === 'steam_list') return { mode: 'start', job: 'steam_list' }
+  //     return { mode: 'run', job: 'steam_list' }
+  //   }
 
-    if (wave.step === 'enrich') {
-      if (stoppedJob === 'steam_enrich') return { mode: 'start', job: 'steam_enrich' }
-      return { mode: 'run', job: 'steam_enrich' }
-    }
+  //   if (wave.step === 'enrich') {
+  //     if (stoppedJob === 'steam_enrich') return { mode: 'start', job: 'steam_enrich' }
+  //     return { mode: 'run', job: 'steam_enrich' }
+  //   }
 
-    return null
-  }
+  //   return null
+  // }
 
   private _initEvents() {
-    this._instance.on('worker created', async (name) =>
-      logger.info(`[Bree] Worker "${name}" started`)
-    )
+    if (env.get('NODE_ENV') === 'development') {
+      this._instance.on('worker created', async (name) =>
+        logger.info(`[Bree] Worker "${name}" started`)
+      )
 
-    this._instance.on('worker deleted', async (name) => {
-      logger.info(`[Bree] Worker "${name}" stopped`)
+      this._instance.on('worker deleted', async (name) => {
+        logger.info(`[Bree] Worker "${name}" stopped`)
 
-      // const work = await this._launchLogic(name)
+        // const work = await this._launchLogic(name)
 
-      // if (work === null) {
-      //   logger.error('[Bree] Steam workers ended')
-      //   discordMessage.custom('[Bree] Steam workers ended')
-      // } else if (work.mode === 'start') this._instance.start(work.job)
-      // else if (work.mode === 'run') this._instance.run(work.job)
-    })
+        // if (work === null) {
+        //   logger.error('[Bree] Steam workers ended')
+        //   discordMessage.custom('[Bree] Steam workers ended')
+        // } else if (work.mode === 'start') this._instance.start(work.job)
+        // else if (work.mode === 'run') this._instance.run(work.job)
+      })
+    }
 
     this._instance.on('failed_accessing_database', async (worker) => {
       const message = `[Bree] Failed accessing database for ${worker.name}: ${worker?.message?.issue ?? worker?.message ?? worker}`

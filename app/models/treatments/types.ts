@@ -1,2 +1,2 @@
-export const waveSteps = ['list', 'enrich', 'stats', 'done'] as const
+export const waveSteps = ['list', 'items', 'details', 'stats', 'done'] as const
 export type WaveStep = (typeof waveSteps)[number]

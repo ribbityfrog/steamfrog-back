@@ -16,7 +16,6 @@ class BreeEmit {
   }
 
   async failedAccessingDatabase(issue?: any, stopExecution: boolean = false) {
-    console.log(issue)
     this.custom({ type: 'failed_accessing_database', issue }, stopExecution, true)
   }
 

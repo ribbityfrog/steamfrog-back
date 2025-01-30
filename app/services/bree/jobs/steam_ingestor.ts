@@ -14,39 +14,31 @@ const app = await igniteApp()
 const { default: Catalogue } = await import('#models/catalogues/catalogue')
 const { default: Wave } = await import('#models/treatments/wave')
 type CatalogueType = InstanceType<typeof Catalogue>
+type WaveType = InstanceType<typeof Wave>
 
-// const lastWave = await Wave.query()
-//   .orderBy('wave', 'desc')
-//   .whereNot('step', 'done')
-//   .first()
-//   .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+let tryWave: WaveType | null
+try {
+  tryWave = await Wave.query().orderBy('wave', 'desc').whereNot('step', 'done').first()
 
-// const newWave =
-//   lastWave !== null
-//     ? lastWave
-//     : await Wave.create({})
-//         .then(async (wave) => {
-//           await discordMessage.custom('(worker_steam-list) New wave has been started')
-//           return wave
-//         })
-//         .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+  if (tryWave === null) {
+    tryWave = await Wave.create({})
+    await discordMessage.custom('(worker_steam-ingestor) New wave has been started')
+    tryWave.refresh()
+  }
+} catch (err) {
+  await breeEmit.failedAccessingDatabase(err.message, true)
+}
+const wave = tryWave!
 
-// const wave = newWave!
+if (wave.step === 'list') {
+  await ingestCategories()
+  await ingestTags()
 
-// if (lastWave === null)
-//   await wave
-//     .refresh()
-//     .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+  await ingestList()
 
-// if (wave.step === 'enrich' || wave.step === 'stats') {
-//   await app!.terminate()
-//   process.exit(0)
-// }
-
-await ingestCategories()
-await ingestTags()
-
-await ingestList()
+  wave.step = 'items'
+  await wave.save().catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+}
 
 await app!.terminate()
 process.exit(0)
