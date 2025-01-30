@@ -14,36 +14,41 @@ export default class extends BaseSchema {
 
       table.string('app_type').notNullable().defaultTo('new')
 
-      table.integer('parent_game_id')
+      table.integer('parent_id')
       table.string('name', 511).notNullable()
 
       table.timestamp('store_updated_at').notNullable()
       table.timestamp('store_lastly_updated_at')
       table.timestamp('store_previously_updated_at')
 
-      table.boolean('is_enriched').notNullable().defaultTo(false)
+      table.boolean('are_details_enriched').notNullable().defaultTo(false)
+      table.boolean('are_reviews_enriched').notNullable().defaultTo(false)
+      table.boolean('are_achievements_enriched').notNullable().defaultTo(false)
 
       table.jsonb('reviews')
       table.specificType('achievements', 'jsonb[]')
 
-      table.boolean('is_released')
-      table.timestamp('release_date')
+      table.jsonb('release')
 
-      table.integer('age')
+      table.integer('age_gate').notNullable().defaultTo(0)
+      table.jsonb('rating')
+      table.specificType('rating_descriptors', 'varchar(63)[]').notNullable().defaultTo('{}')
 
       table.jsonb('platforms')
-      table.boolean('has_controller_support')
 
-      table.specificType('developers', 'varchar(255)[]').notNullable().defaultTo('{}')
-      table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
-      table.specificType('genres', 'varchar(255)[]').notNullable().defaultTo('{}')
-      table.specificType('categories', 'varchar(255)[]').notNullable().defaultTo('{}')
+      table.specificType('developers', 'varchar(127)[]').notNullable().defaultTo('{}')
+      table.specificType('publishers', 'varchar(127)[]').notNullable().defaultTo('{}')
+      table.specificType('franchises', 'varchar(127)[]')
+      // table.specificType('genres', 'varchar(255)[]').notNullable().defaultTo('{}')
+      // table.specificType('categories', 'varchar(255)[]').notNullable().defaultTo('{}')
 
       table.boolean('is_free')
       table.jsonb('pricing')
 
-      table.jsonb('metacritic')
+      table.jsonb('languages').notNullable().defaultTo('[]')
       table.jsonb('media')
+
+      table.jsonb('metacritic')
 
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
@@ -52,7 +57,7 @@ export default class extends BaseSchema {
       `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT app_type_allowed CHECK (app_type IN (${this.appTypesAllowed}))`
     )
     this.schema.raw(
-      `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT age_limit CHECK (age >= 0)`
+      `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT age_gate_limit CHECK (age_gate >= 0)`
     )
   }
 

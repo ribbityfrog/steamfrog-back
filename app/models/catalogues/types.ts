@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon'
+
 export const categoryTypes = ['module', 'player', 'feature', 'controller'] as const
 export type CategoryType = (typeof categoryTypes)[number]
 
@@ -19,16 +21,37 @@ export type Achievement = {
   percent: number
 }
 
-export type Platforms = {
-  windows: boolean
-  mac: boolean
-  linux: boolean
+export type Release = {
+  isReleased: boolean
+  date: DateTime | null
+  hasEarlyAccess: boolean
+  hasDemo: boolean
+}
+
+export type Rating = {
+  type: string
+  rating: string
+}
+
+// export type Platforms = {
+//   windows: boolean
+//   mac: boolean
+//   linux: boolean
+// }
+
+export type Language = {
+  elanguage: number
+  language: string
+  supported: boolean
+  audio: boolean
+  subtitles: boolean
 }
 
 export type Pricing = {
   priceInitial: number
   priceFinal: number
   priceDiscount: number
+  hasPrePurchase: boolean
 }
 
 export type Metacritic = {
@@ -37,7 +60,6 @@ export type Metacritic = {
 }
 
 export type Media = {
-  header: string
   screenshotCount: number
   videoCount: number
 }

@@ -3,10 +3,12 @@ import { BaseModel, column, scope } from '@adonisjs/lucid/orm'
 import type {
   Achievement,
   AppType,
+  Language,
   Media,
   Metacritic,
-  Platforms,
   Pricing,
+  Rating,
+  Release,
   Reviews,
 } from '#models/catalogues/types'
 import db from '@adonisjs/lucid/services/db'
@@ -21,7 +23,7 @@ export default class Catalogue extends BaseModel {
   declare appType: AppType
 
   @column()
-  declare parentGameId: number | null
+  declare parentId: number | null
 
   @column()
   declare name: string
@@ -36,7 +38,13 @@ export default class Catalogue extends BaseModel {
   declare storePreviouslyUpdatedAt: DateTime
 
   @column()
-  declare isEnriched: boolean
+  declare areDetailsEnriched: boolean
+
+  @column()
+  declare areReviewsEnriched: boolean
+
+  @column()
+  declare areAchievementsEnriched: boolean
 
   @column()
   declare reviews: Reviews
@@ -45,19 +53,19 @@ export default class Catalogue extends BaseModel {
   declare achievements: Achievement[] | null
 
   @column()
-  declare isReleased: boolean
-
-  @column.dateTime()
-  declare releaseDate: DateTime | null
+  declare release: Release
 
   @column()
-  declare age: number
+  declare ageGate: number
 
   @column()
-  declare platforms: Platforms
+  declare rating: Rating
 
   @column()
-  declare hasControllerSupport: boolean
+  declare ratingDescriptors: string[]
+
+  @column()
+  declare platforms: any
 
   @column()
   declare developers: string[]
@@ -66,16 +74,16 @@ export default class Catalogue extends BaseModel {
   declare publishers: string[]
 
   @column()
-  declare categories: string[]
+  declare franchises: string[]
 
   @column()
-  declare genres: string[] | null
+  declare isFree: boolean
 
   @column()
-  declare isFree: boolean | null
+  declare pricing: Pricing | null
 
   @column()
-  declare pricing: Pricing
+  declare languages: Language[]
 
   @column()
   declare metacritic: Metacritic | null
