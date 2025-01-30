@@ -5,6 +5,8 @@ import Catalogue from '#models/catalogues/catalogue'
 import steamData from '#services/steam_data'
 import Wave from '#models/treatments/wave'
 import db from '@adonisjs/lucid/services/db'
+import Category from '#models/catalogues/category'
+import Tag from '#models/catalogues/tag'
 
 export default class SandboxesController {
   async progress() {
@@ -72,5 +74,12 @@ export default class SandboxesController {
     // await sApp.save()
 
     // return sApp
+  }
+
+  async catags() {
+    return {
+      categories: await Category.all(),
+      tags: await Tag.all(),
+    }
   }
 }

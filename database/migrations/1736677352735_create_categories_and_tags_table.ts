@@ -19,6 +19,7 @@ export default class extends BaseSchema {
 
       table.string('type').notNullable()
       table.string('name').notNullable()
+      table.integer('order').notNullable().defaultTo(99999)
       table.string('logo').notNullable()
 
       table.timestamp('created_at')

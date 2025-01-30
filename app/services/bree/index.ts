@@ -36,13 +36,17 @@ export default class Bree {
 
       jobs: [
         {
-          name: 'steam_list',
+          name: 'steam_ingestor',
           timeout: '5 minutes',
         },
-        {
-          name: 'steam_enrich',
-          timeout: '4 minutes',
-        },
+        // {
+        //   name: 'steam_list',
+        //   timeout: '5 minutes',
+        // },
+        // {
+        //   name: 'steam_enrich',
+        //   timeout: '4 minutes',
+        // },
       ],
 
       workerMessageHandler: (worker) => {
@@ -65,12 +69,12 @@ export default class Bree {
   }
 
   async start() {
-    const worker = await this._launchLogic()
+    // const worker = await this._launchLogic()
 
-    if (worker === null) return
+    // if (worker === null) return
 
     await this._instance
-      .run(worker.job)
+      .run('steam_ingestor')
       .then(() => {
         this._initEvents()
         logger.info('[service] Bree - Started properly')
@@ -115,13 +119,13 @@ export default class Bree {
     this._instance.on('worker deleted', async (name) => {
       logger.info(`[Bree] Worker "${name}" stopped`)
 
-      const work = await this._launchLogic(name)
+      // const work = await this._launchLogic(name)
 
-      if (work === null) {
-        logger.error('[Bree] Steam workers ended')
-        discordMessage.custom('[Bree] Steam workers ended')
-      } else if (work.mode === 'start') this._instance.start(work.job)
-      else if (work.mode === 'run') this._instance.run(work.job)
+      // if (work === null) {
+      //   logger.error('[Bree] Steam workers ended')
+      //   discordMessage.custom('[Bree] Steam workers ended')
+      // } else if (work.mode === 'start') this._instance.start(work.job)
+      // else if (work.mode === 'run') this._instance.run(work.job)
     })
 
     this._instance.on('failed_accessing_database', async (worker) => {

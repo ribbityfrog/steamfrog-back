@@ -2,6 +2,8 @@ import { DateTime } from 'luxon'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 
 export default class Tag extends BaseModel {
+  static table = 'catalogues.tags'
+
   @column({ isPrimary: true })
   declare id: number
 

@@ -30,9 +30,10 @@ const explorersController = () => import('#controllers/explorers_controller')
 
 router
   .group(() => {
-    router.get('edit', [explorersController, 'edit'])
     router.get('progress', [explorersController, 'progress'])
     router.get('app/:appid', [explorersController, 'app'])
     router.get('stats', [explorersController, 'stats'])
+    router.get('edit', [explorersController, 'edit'])
+    router.get('catags', [explorersController, 'catags'])
   })
   .prefix('explore')
