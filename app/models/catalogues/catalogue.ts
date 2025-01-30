@@ -11,8 +11,8 @@ import type {
 } from '#models/catalogues/types'
 import db from '@adonisjs/lucid/services/db'
 
-export default class SteamApp extends BaseModel {
-  static table = 'catalogues.steam_apps'
+export default class Catalogue extends BaseModel {
+  static table = 'catalogues.catalogues'
 
   @column({ isPrimary: true })
   declare id: number
@@ -110,32 +110,32 @@ export default class SteamApp extends BaseModel {
       mostNegativeGame,
       mostNegativeDlc,
     ] = await Promise.all([
-      SteamApp.query()
+      Catalogue.query()
         .withScopes((scopes) => scopes.enrichedGame())
         .andWhereNotNull('pricing')
         .orderByRaw("(pricing->>'priceFinal')::numeric DESC")
         .limit(3),
-      SteamApp.query()
+      Catalogue.query()
         .withScopes((scopes) => scopes.enrichedDlc())
         .andWhereNotNull('pricing')
         .orderByRaw("(pricing->>'priceFinal')::numeric DESC")
         .limit(3),
-      SteamApp.query()
+      Catalogue.query()
         .withScopes((scopes) => scopes.enrichedGame())
         .andWhereNotNull('reviews')
         .orderByRaw("(reviews->>'positiveCount')::integer DESC")
         .limit(3),
-      SteamApp.query()
+      Catalogue.query()
         .withScopes((scopes) => scopes.enrichedDlc())
         .andWhereNotNull('reviews')
         .orderByRaw("(reviews->>'positiveCount')::integer DESC")
         .limit(3),
-      SteamApp.query()
+      Catalogue.query()
         .withScopes((scopes) => scopes.enrichedGame())
         .andWhereNotNull('reviews')
         .orderByRaw("(reviews->>'negativeCount')::integer DESC")
         .limit(3),
-      SteamApp.query()
+      Catalogue.query()
         .withScopes((scopes) => scopes.enrichedDlc())
         .andWhereNotNull('reviews')
         .orderByRaw("(reviews->>'negativeCount')::integer DESC")
@@ -153,7 +153,7 @@ export default class SteamApp extends BaseModel {
   }
 
   static async statsTotals() {
-    const [totals] = await db.from(SteamApp.table).select(
+    const [totals] = await db.from(Catalogue.table).select(
       db.raw(`
         (COUNT(CASE WHEN app_type = 'game' THEN 1 END))::integer AS game_count,
         (COUNT(CASE WHEN app_type = 'dlc' THEN 1 END))::integer AS dlc_count,
@@ -168,7 +168,7 @@ export default class SteamApp extends BaseModel {
 
   static async statsPlatforms() {
     const [platforms] = await db
-      .from(SteamApp.table)
+      .from(Catalogue.table)
       // .withScopes((scopes) => scopes.enrichedGameOrDlc())
       .where('is_enriched', true)
       .andWhereIn('app_type', ['game', 'dlc'])
@@ -217,7 +217,7 @@ export default class SteamApp extends BaseModel {
   }
 
   static async notOnWindows() {
-    const games = await SteamApp.query()
+    const games = await Catalogue.query()
       .where('is_enriched', true)
       .andWhere('app_type', 'game')
       .andWhereRaw("(platforms->>'windows')::boolean IS false")

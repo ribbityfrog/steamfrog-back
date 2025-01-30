@@ -1,22 +1,22 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import env from '#start/env'
 
-import SteamApp from '#models/catalogues/steam_app'
+import Catalogue from '#models/catalogues/catalogue'
 import steamData from '#services/steam_data'
 import Wave from '#models/treatments/wave'
 import db from '@adonisjs/lucid/services/db'
 
 export default class SandboxesController {
   async progress() {
-    const steamAppsExtract = await SteamApp.query()
+    const steamAppsExtract = await Catalogue.query()
       .where('isEnriched', true)
       .orderBy('id', 'desc')
       .limit(10)
-    const steamAppsCount = await db.from(SteamApp.table).count('*')
-    const enrichedAppsCount = await db.from(SteamApp.table).where('is_enriched', true).count('*')
-    const outerAppsCount = await db.from(SteamApp.table).where('app_type', 'outer').count('*')
-    const brokenApps = await SteamApp.query().where('app_type', 'broken')
-    const trashedApps = await SteamApp.query().where('app_type', 'trash')
+    const steamAppsCount = await db.from(Catalogue.table).count('*')
+    const enrichedAppsCount = await db.from(Catalogue.table).where('is_enriched', true).count('*')
+    const outerAppsCount = await db.from(Catalogue.table).where('app_type', 'outer').count('*')
+    const brokenApps = await Catalogue.query().where('app_type', 'broken')
+    const trashedApps = await Catalogue.query().where('app_type', 'trash')
 
     return {
       wave: await Wave.query().select('wave', 'step', 'last_appid').orderBy('wave', 'desc').first(),
@@ -53,18 +53,18 @@ export default class SandboxesController {
   }
 
   async stats() {
-    // const totals = await SteamApp.statsTotals()
-    // const games = await SteamApp.statsGames()
-    // const platforms = await SteamApp.statsPlatforms()
-    // const notOnWindows = await SteamApp.notOnWindows()
+    // const totals = await Catalogue.statsTotals()
+    // const games = await Catalogue.statsGames()
+    // const platforms = await Catalogue.statsPlatforms()
+    // const notOnWindows = await Catalogue.notOnWindows()
     // return { totals, games, platforms, notOnWindows }
   }
 
   async edit() {
     if (env.get('NODE_ENV', 'production') !== 'development') return 'no edit in production'
 
-    // const sApp = await SteamApp.query().where('app_type', 'broken').update({ app_type: 'new' })
-    // const sApp = await SteamApp.findBy('id', 774161)
+    // const sApp = await Catalogue.query().where('app_type', 'broken').update({ app_type: 'new' })
+    // const sApp = await Catalogue.findBy('id', 774161)
     // if (!sApp) return 'nothing to edit'
 
     // sApp.isEnriched = false

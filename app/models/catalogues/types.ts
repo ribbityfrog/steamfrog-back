@@ -1,3 +1,6 @@
+export const categoryTypes = ['module', 'player', 'feature', 'controller'] as const
+export type CategoryType = (typeof categoryTypes)[number]
+
 export const appTypes = ['new', 'game', 'dlc', 'outer', 'broken', 'trash'] as const
 export type AppType = (typeof appTypes)[number]
 

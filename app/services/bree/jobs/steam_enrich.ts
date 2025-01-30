@@ -17,7 +17,7 @@ import { DateTime } from 'luxon'
 
 const app = await igniteApp()
 
-const { default: SteamApp } = await import('#models/catalogues/steam_app')
+const { default: Catalogue } = await import('#models/catalogues/catalogue')
 const { default: Wave } = await import('#models/treatments/wave')
 
 const wave = await Wave.query()
@@ -34,7 +34,7 @@ if (wave === null) {
 }
 
 while (true) {
-  const steamApps = await SteamApp.query()
+  const steamApps = await Catalogue.query()
     .where('isEnriched', false)
     .andWhereNotIn('appType', ['outer', 'broken', 'trash'])
     .orderBy('id', 'asc')

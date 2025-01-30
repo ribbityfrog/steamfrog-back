@@ -4,12 +4,11 @@ import { appTypes } from '#models/catalogues/types'
 
 export default class extends BaseSchema {
   protected schemaName = 'catalogues'
-  protected tableName = 'steam_apps'
+  protected tableName = 'catalogues'
+
   protected appTypesAllowed = appTypes.map((appType) => `'${appType}'`).join(', ')
 
   async up() {
-    this.schema.createSchema(this.schemaName)
-
     this.schema.withSchema(this.schemaName).createTable(this.tableName, (table) => {
       table.integer('id').primary()
 
@@ -59,6 +58,5 @@ export default class extends BaseSchema {
 
   async down() {
     this.schema.withSchema(this.schemaName).dropTable(this.tableName)
-    this.schema.dropSchema(this.schemaName)
   }
 }

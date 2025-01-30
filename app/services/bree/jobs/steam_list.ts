@@ -11,9 +11,9 @@ import env from '#start/env'
 
 const app = await igniteApp()
 
-const { default: SteamApp } = await import('#models/catalogues/steam_app')
+const { default: Catalogue } = await import('#models/catalogues/catalogue')
 const { default: Wave } = await import('#models/treatments/wave')
-type SteamAppType = InstanceType<typeof SteamApp>
+type CatalogueType = InstanceType<typeof Catalogue>
 
 const lastWave = await Wave.query()
   .orderBy('wave', 'desc')
@@ -63,7 +63,7 @@ while (true) {
   while (list.apps?.length > 0) {
     let iteStep = 10
 
-    const sublist: Partial<SteamAppType>[] = list.apps
+    const sublist: Partial<CatalogueType>[] = list.apps
       .splice(0, list.apps.length > iteStep ? iteStep : list.apps.length)
       .map((steamApp) => ({
         id: steamApp.appid,
@@ -77,7 +77,7 @@ while (true) {
         `Insert from ${sublist[0].id} to ${sublist[sublist.length - 1].id}, ${sublist.length} new apps, ${list.apps.length} left`
       )
 
-    await SteamApp.updateOrCreateMany('id', sublist).catch(
+    await Catalogue.updateOrCreateMany('id', sublist).catch(
       async (err) => await breeEmit.failedAccessingDatabase(err.message, true)
     )
     wave.lastAppid = sublist[sublist.length - 1].id!
