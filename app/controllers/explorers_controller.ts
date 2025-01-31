@@ -10,6 +10,8 @@ import Tag from '#models/catalogues/tag'
 
 export default class SandboxesController {
   async progress() {
+    const wave = await Wave.query().select().orderBy('wave', 'desc').first()
+
     const steamAppsExtract = await Catalogue.query()
       .where('are_details_enriched', true)
       .orderBy('id', 'desc')
@@ -24,7 +26,10 @@ export default class SandboxesController {
     const trashedApps = await Catalogue.query().where('app_type', 'trash')
 
     return {
-      wave: await Wave.query().select('wave', 'step', 'last_appid').orderBy('wave', 'desc').first(),
+      wave: {
+        ...wave?.$attributes,
+        duration: wave?.updatedAt.diff(wave.createdAt).as('minutes'),
+      },
       badApples: {
         broken: {
           count: brokenApps.length,

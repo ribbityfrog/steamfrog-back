@@ -48,8 +48,7 @@ export default class ThirdProvider {
       .then()
       .catch(() => {})
     discordMessage.custom('(START-provider) Third services ready', false)
-    // } else
-    // logger.warn('[service] Bree not started, production only')
+    // } else logger.warn('[service] Bree not started, production only')
   }
 
   /**

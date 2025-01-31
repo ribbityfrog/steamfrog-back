@@ -248,13 +248,13 @@ async function ingestItems(): Promise<boolean> {
         steamApp.platforms = item.platforms
 
         steamApp.developers = item.basic_info?.developers
-          ? item.basic_info.developers.map((deveveloper) => deveveloper.name)
+          ? item.basic_info.developers.map((deveveloper) => deveveloper.name.substring(0, 127))
           : []
         steamApp.publishers = item.basic_info?.publishers
-          ? item.basic_info.publishers.map((publisher) => publisher.name)
+          ? item.basic_info.publishers.map((publisher) => publisher.name.substring(0, 127))
           : []
         steamApp.franchises = item.basic_info?.franchises
-          ? item.basic_info.franchises.map((franchise) => franchise.name)
+          ? item.basic_info.franchises.map((franchise) => franchise.name.substring(0, 127))
           : []
 
         steamApp.isFree = item?.is_free === true
