@@ -132,7 +132,7 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
     let list: SteamAPIStoreList | undefined
 
     try {
-      const listResponse = await steamData.fetchStoreList(0, fetchStep)
+      const listResponse = await steamData.fetchStoreList(wave.lastAppid, fetchStep)
       list = listResponse.content
     } catch (issue) {
       const reason = issue as SteamDataReject
