@@ -39,7 +39,7 @@ const steamEndpoints = {
       data_request: {
         include_tag_count: true,
         include_basic_info: true,
-        inluce_release: true,
+        include_release: true,
         include_platforms: true,
         include_ratings: true,
         include_screenshots: true,

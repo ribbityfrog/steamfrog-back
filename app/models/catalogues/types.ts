@@ -24,13 +24,14 @@ export type Achievement = {
 export type Release = {
   isReleased: boolean
   date: DateTime | null
-  hasEarlyAccess: boolean
+  isEarlyAccess: boolean
   hasDemo: boolean
 }
 
 export type Rating = {
   type: string
   rating: string
+  descriptors: string[]
 }
 
 // export type Platforms = {
@@ -39,19 +40,19 @@ export type Rating = {
 //   linux: boolean
 // }
 
+export type Pricing = {
+  priceInitial: number
+  priceFinal: number
+  priceDiscount: number
+  isPrePurchase: boolean
+}
+
 export type Language = {
   elanguage: number
   language: string
   supported: boolean
   audio: boolean
   subtitles: boolean
-}
-
-export type Pricing = {
-  priceInitial: number
-  priceFinal: number
-  priceDiscount: number
-  hasPrePurchase: boolean
 }
 
 export type Metacritic = {

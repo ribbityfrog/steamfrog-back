@@ -59,10 +59,7 @@ export default class Catalogue extends BaseModel {
   declare ageGate: number
 
   @column()
-  declare rating: Rating
-
-  @column()
-  declare ratingDescriptors: string[]
+  declare rating: Rating | null
 
   @column()
   declare platforms: any
@@ -82,6 +79,7 @@ export default class Catalogue extends BaseModel {
   @column()
   declare pricing: Pricing | null
 
+  // @column({ prepare: (value: Language[]) => JSON.stringify(value) })
   @column()
   declare languages: Language[]
 

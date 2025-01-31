@@ -11,11 +11,14 @@ import Tag from '#models/catalogues/tag'
 export default class SandboxesController {
   async progress() {
     const steamAppsExtract = await Catalogue.query()
-      .where('isEnriched', true)
+      .where('are_details_enriched', true)
       .orderBy('id', 'desc')
-      .limit(10)
+      .limit(12)
     const steamAppsCount = await db.from(Catalogue.table).count('*')
-    const enrichedAppsCount = await db.from(Catalogue.table).where('is_enriched', true).count('*')
+    const enrichedDetailsCount = await db
+      .from(Catalogue.table)
+      .where('are_details_enriched', true)
+      .count('*')
     const outerAppsCount = await db.from(Catalogue.table).where('app_type', 'outer').count('*')
     const brokenApps = await Catalogue.query().where('app_type', 'broken')
     const trashedApps = await Catalogue.query().where('app_type', 'trash')
@@ -34,9 +37,9 @@ export default class SandboxesController {
       },
       apps: {
         totalCount: Number(steamAppsCount[0].count),
-        enrichedCount: Number(enrichedAppsCount[0].count),
+        enrichedCount: Number(enrichedDetailsCount[0].count),
         outerCount: Number(outerAppsCount[0].count),
-        last10Enriched: steamAppsExtract,
+        lastEnriched: steamAppsExtract,
       },
     }
   }

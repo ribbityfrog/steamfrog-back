@@ -32,7 +32,6 @@ export default class extends BaseSchema {
 
       table.integer('age_gate').notNullable().defaultTo(0)
       table.jsonb('rating')
-      table.specificType('rating_descriptors', 'varchar(63)[]').notNullable().defaultTo('{}')
 
       table.jsonb('platforms')
 
@@ -45,7 +44,8 @@ export default class extends BaseSchema {
       table.boolean('is_free')
       table.jsonb('pricing')
 
-      table.jsonb('languages').notNullable().defaultTo('[]')
+      table.specificType('languages', 'jsonb[]').notNullable().defaultTo('{}')
+      // table.jsonb('languages').notNullable().defaultTo('[]')
       table.jsonb('media')
 
       table.jsonb('metacritic')
