@@ -38,10 +38,10 @@ export default class Catalogue extends BaseModel {
   declare storePreviouslyUpdatedAt: DateTime
 
   @column()
-  declare areDetailsEnriched: boolean
+  declare isItemsEnriched: boolean
 
   @column()
-  declare areReviewsEnriched: boolean
+  declare isDetailsEnriched: boolean
 
   @column()
   declare areAchievementsEnriched: boolean

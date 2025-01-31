@@ -156,9 +156,8 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
             ({
               id: steamApp.appid,
               name: steamApp.name,
-              areDetailsEnriched: false,
-              areReviewsEnriched: false,
-              areAchievementsEnriched: false,
+              isItemsEnriched: false,
+              isDetailsEnriched: false,
               storeUpdatedAt: DateTime.fromSeconds(steamApp.last_modified),
             }) satisfies Partial<CatalogueType>
         )
@@ -256,13 +255,13 @@ async function ingestItems(): Promise<boolean> {
         steamApp.platforms = item.platforms
 
         steamApp.developers = item.basic_info?.developers
-          ? item.basic_info.developers.map((deveveloper) => deveveloper.name.substring(0, 127))
+          ? item.basic_info.developers.map((deveveloper) => deveveloper.name.substring(0, 255))
           : []
         steamApp.publishers = item.basic_info?.publishers
-          ? item.basic_info.publishers.map((publisher) => publisher.name.substring(0, 127))
+          ? item.basic_info.publishers.map((publisher) => publisher.name.substring(0, 255))
           : []
         steamApp.franchises = item.basic_info?.franchises
-          ? item.basic_info.franchises.map((franchise) => franchise.name.substring(0, 127))
+          ? item.basic_info.franchises.map((franchise) => franchise.name.substring(0, 255))
           : []
 
         steamApp.isFree = item?.is_free === true
@@ -301,10 +300,34 @@ async function ingestItems(): Promise<boolean> {
           ? steamApp.storeLastlyUpdatedAt
           : steamApp.storeUpdatedAt
       steamApp.storeLastlyUpdatedAt = steamApp.storeUpdatedAt
-      steamApp.areDetailsEnriched = true
+      steamApp.isItemsEnriched = true
       await steamApp
         .save()
         .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
     }
   }
 }
+
+async function ingestDetails() {}
+// if (reviews)
+//   steamApp.reviews = {
+//     score: reviews.review_score,
+//     scoreName: reviews.review_score_desc,
+//     positiveCount: reviews.total_positive,
+//     negativeCount: reviews.total_negative,
+//     totalCount: reviews.total_reviews,
+//   }
+
+// if (achievements)
+//   steamApp.achievements =
+//     achievements.length > 0
+//       ? achievements.map(
+//           (achievement) =>
+//             ({
+//               name: achievement.name,
+//               description: achievement?.description ?? '',
+//               hidden: achievement.hidden,
+//               percent: achievement.percent,
+//             }) satisfies Achievement
+//         )
+//       : []

@@ -21,9 +21,8 @@ export default class extends BaseSchema {
       table.timestamp('store_lastly_updated_at')
       table.timestamp('store_previously_updated_at')
 
-      table.boolean('are_details_enriched').notNullable().defaultTo(false)
-      table.boolean('are_reviews_enriched').notNullable().defaultTo(false)
-      table.boolean('are_achievements_enriched').notNullable().defaultTo(false)
+      table.boolean('is_items_enriched').notNullable().defaultTo(false)
+      table.boolean('is_details_enriched').notNullable().defaultTo(false)
 
       table.jsonb('reviews')
       table.specificType('achievements', 'jsonb[]')
@@ -35,11 +34,12 @@ export default class extends BaseSchema {
 
       table.jsonb('platforms')
 
-      table.specificType('developers', 'varchar(127)[]').notNullable().defaultTo('{}')
-      table.specificType('publishers', 'varchar(127)[]').notNullable().defaultTo('{}')
-      table.specificType('franchises', 'varchar(127)[]')
-      // table.specificType('genres', 'varchar(255)[]').notNullable().defaultTo('{}')
-      // table.specificType('categories', 'varchar(255)[]').notNullable().defaultTo('{}')
+      table.specificType('developers', 'varchar(255)[]').notNullable().defaultTo('{}')
+      table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
+      table.specificType('franchises', 'varchar(255)[]')
+
+      table.specificType('categories', 'integer[]').notNullable().defaultTo('{}')
+      table.specificType('tags', 'integer[]').notNullable().defaultTo('{}')
 
       table.boolean('is_free')
       table.jsonb('pricing')
