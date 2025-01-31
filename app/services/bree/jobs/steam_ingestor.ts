@@ -11,6 +11,7 @@ import steamData from '#services/steam_data'
 
 const app = await igniteApp()
 
+const { default: db } = await import('@adonisjs/lucid/services/db')
 const { default: Catalogue } = await import('#models/catalogues/catalogue')
 const { default: Wave } = await import('#models/treatments/wave')
 type CatalogueType = InstanceType<typeof Catalogue>
@@ -50,7 +51,7 @@ if (wave.step === 'items') {
   const done = await ingestItems()
 
   if (done) {
-    wave.step = 'stats'
+    wave.step = 'details'
     await wave
       .save()
       .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
@@ -176,15 +177,22 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
         .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
     }
 
-    if (!list?.have_more_results) return true
+    if (!list?.have_more_results) {
+      await db
+        .from(Catalogue.table)
+        .whereRaw('store_updated_at = store_lastly_updated_at')
+        .update({ areDetailsEnriched: true })
+        .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+
+      return true
+    }
   }
 }
 
 async function ingestItems(): Promise<boolean> {
   while (true) {
     const steamApps = await Catalogue.query()
-      .where('areDetailsEnriched', false)
-      .andWhereNotIn('appType', ['outer', 'broken', 'trash'])
+      .where('are_details_enriched', false)
       .orderBy('id', 'asc')
       .limit(100)
       .catch(async (err) => {
