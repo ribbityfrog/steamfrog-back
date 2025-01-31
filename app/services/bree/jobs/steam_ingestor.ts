@@ -9,6 +9,8 @@ import type { SteamDataReject, SteamAPIStoreList } from '#services/steam_data/ty
 
 import steamData from '#services/steam_data'
 
+import { Achievement } from '#models/catalogues/types'
+
 const app = await igniteApp()
 
 const { default: db } = await import('@adonisjs/lucid/services/db')
@@ -56,7 +58,22 @@ if (wave.step === 'items') {
       .save()
       .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
-    await discordMessage.custom('(worker_steam-ingestor) Steam items details done')
+    await discordMessage.custom('(worker_steam-ingestor) Steam items done')
+  }
+}
+
+if (wave.step === 'details') {
+  const done = await ingestDetails()
+
+  if (done) {
+    wave.step = 'done'
+    await wave
+      .save()
+      .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+
+    await discordMessage.custom(
+      '(worker_steam-ingestor) Steam details (reviews + achievements) done'
+    )
   }
 }
 
@@ -226,8 +243,10 @@ async function ingestItems(): Promise<boolean> {
 
       if (item.visible === false) {
         steamApp.appType = item.unvailable_for_country_restriction === true ? 'outer' : 'broken'
+        steamApp.isDetailsEnriched = true
       } else if (item.type !== 0 && item.type !== 4) {
         steamApp.appType = 'trash'
+        steamApp.isDetailsEnriched = true
       } else {
         steamApp.appType = item.type === 0 ? 'game' : 'dlc'
 
@@ -308,26 +327,58 @@ async function ingestItems(): Promise<boolean> {
   }
 }
 
-async function ingestDetails() {}
-// if (reviews)
-//   steamApp.reviews = {
-//     score: reviews.review_score,
-//     scoreName: reviews.review_score_desc,
-//     positiveCount: reviews.total_positive,
-//     negativeCount: reviews.total_negative,
-//     totalCount: reviews.total_reviews,
-//   }
+async function ingestDetails() {
+  while (true) {
+    const steamApps = await Catalogue.query()
+      .where('is_details_enriched', false)
+      .limit(100)
+      .catch(async (err) => {
+        await breeEmit.failedAccessingDatabase(err.message, true)
+        return null
+      })
 
-// if (achievements)
-//   steamApp.achievements =
-//     achievements.length > 0
-//       ? achievements.map(
-//           (achievement) =>
-//             ({
-//               name: achievement.name,
-//               description: achievement?.description ?? '',
-//               hidden: achievement.hidden,
-//               percent: achievement.percent,
-//             }) satisfies Achievement
-//         )
-//       : []
+    if (steamApps === null) return false
+    if (steamApps.length === 0) return true
+
+    for (const steamApp of steamApps) {
+      if (env.get('NODE_ENV') !== 'production')
+        console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
+
+      const [reviews, achievements] = await Promise.all([
+        steamData.fetchReviews(steamApp.id),
+        steamApp.appType === 'game' ? steamData.fetchAchievements(steamApp.id) : null,
+      ]).catch(async (err) => {
+        await discordMessage.steamReject(err)
+        process.exit(1)
+      })
+
+      steamApp.reviews = {
+        score: reviews.content.review_score,
+        scoreName: reviews.content.review_score_desc,
+        positiveCount: reviews.content.total_positive,
+        negativeCount: reviews.content.total_negative,
+        totalCount: reviews.content.total_reviews,
+      }
+
+      if (achievements)
+        steamApp.achievements =
+          achievements.content.length > 0
+            ? achievements.content.map(
+                (achievement) =>
+                  ({
+                    name: achievement.name,
+                    description: achievement?.description ?? '',
+                    hidden: achievement.hidden,
+                    percent: achievement.percent,
+                  }) satisfies Achievement
+              )
+            : []
+
+      steamApp.isDetailsEnriched = true
+
+      await steamApp.save().catch(async (err) => {
+        await breeEmit.failedAccessingDatabase(err.message, true)
+      })
+    }
+  }
+}

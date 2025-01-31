@@ -38,8 +38,8 @@ export default class extends BaseSchema {
       table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
       table.specificType('franchises', 'varchar(255)[]')
 
-      table.specificType('categories', 'integer[]').notNullable().defaultTo('{}')
-      table.specificType('tags', 'integer[]').notNullable().defaultTo('{}')
+      // table.specificType('categories', 'integer[]').notNullable().defaultTo('{}')
+      // table.specificType('tags', 'integer[]').notNullable().defaultTo('{}')
 
       table.boolean('is_free')
       table.jsonb('pricing')
