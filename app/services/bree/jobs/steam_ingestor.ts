@@ -197,7 +197,7 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
       await db
         .from(Catalogue.table)
         .whereRaw('store_updated_at = store_lastly_updated_at')
-        .update({ areDetailsEnriched: true })
+        .update('is_items_enriched', true)
         .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
       return true
@@ -208,7 +208,7 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
 async function ingestItems(): Promise<boolean> {
   while (true) {
     const steamApps = await Catalogue.query()
-      .where('are_details_enriched', false)
+      .where('is_items_enriched', false)
       .orderBy('id', 'asc')
       .limit(100)
       .catch(async (err) => {

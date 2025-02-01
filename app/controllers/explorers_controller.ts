@@ -13,13 +13,13 @@ export default class SandboxesController {
     const wave = await Wave.query().select().orderBy('wave', 'desc').first()
 
     const steamAppsExtract = await Catalogue.query()
-      .where('are_details_enriched', true)
+      .where('is_items_enriched', true)
       .orderBy('id', 'desc')
       .limit(12)
     const steamAppsCount = await db.from(Catalogue.table).count('*')
     const enrichedDetailsCount = await db
       .from(Catalogue.table)
-      .where('are_details_enriched', true)
+      .where('is_items_enriched', true)
       .count('*')
     const outerAppsCount = await db.from(Catalogue.table).where('app_type', 'outer').count('*')
     const brokenApps = await Catalogue.query().where('app_type', 'broken')
