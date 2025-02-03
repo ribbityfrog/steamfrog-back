@@ -41,14 +41,14 @@ export default class ThirdProvider {
    * The process has been started
    */
   async ready() {
-    // if (env.get('NODE_ENV', 'development') === 'production') {
-    const scheduler = await this.app.container.make(Bree)
-    await scheduler
-      .start()
-      .then()
-      .catch(() => {})
-    discordMessage.custom('(START-provider) Third services ready', false)
-    // } else logger.warn('[service] Bree not started, production only')
+    if (env.get('NODE_ENV', 'development') === 'production') {
+      const scheduler = await this.app.container.make(Bree)
+      await scheduler
+        .start()
+        .then()
+        .catch(() => {})
+      discordMessage.custom('(START-provider) Third services ready', false)
+    } else logger.warn('[service] Bree not started, production only')
   }
 
   /**

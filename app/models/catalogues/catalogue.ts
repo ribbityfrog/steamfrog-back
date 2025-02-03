@@ -20,6 +20,9 @@ export default class Catalogue extends BaseModel {
   declare id: number
 
   @column()
+  declare group: number
+
+  @column()
   declare appType: AppType
 
   @column()

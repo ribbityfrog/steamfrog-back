@@ -13,5 +13,8 @@ export default class Wave extends compose(BaseModel, withDefaultFields) {
   declare step: WaveStep
 
   @column()
+  declare lastGroup: number
+
+  @column()
   declare lastAppid: number
 }

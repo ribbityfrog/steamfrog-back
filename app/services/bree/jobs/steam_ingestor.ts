@@ -50,9 +50,15 @@ if (wave.step === 'list') {
 }
 
 if (wave.step === 'items') {
-  const done = await ingestItems()
+  const done = await Promise.all([
+    ingestItems(5, 0),
+    ingestItems(5, 1),
+    ingestItems(5, 2),
+    ingestItems(5, 3),
+    ingestItems(5, 4),
+  ])
 
-  if (done) {
+  if (done.every((b) => b === true)) {
     wave.step = 'details'
     await wave
       .save()
@@ -63,9 +69,15 @@ if (wave.step === 'items') {
 }
 
 if (wave.step === 'details') {
-  const done = await ingestDetails()
+  const done = await Promise.all([
+    ingestDetails(5, 0),
+    ingestDetails(5, 1),
+    ingestDetails(5, 2),
+    ingestDetails(5, 3),
+    ingestDetails(5, 4),
+  ])
 
-  if (done) {
+  if (done.every((b) => b === true)) {
     wave.step = 'done'
     await wave
       .save()
@@ -145,7 +157,7 @@ async function ingestTags() {
   await discordMessage.custom('[worker_steam-ingestor] Tags done updated')
 }
 
-async function ingestList(fetchStep: number = 10000, updateStep: number = 1000): Promise<boolean> {
+async function ingestList(fetchStep: number = 20000, updateStep: number = 1000): Promise<boolean> {
   while (true) {
     let list: SteamAPIStoreList | undefined
 
@@ -172,6 +184,7 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
           (steamApp) =>
             ({
               id: steamApp.appid,
+              group: wave.lastGroup,
               name: steamApp.name,
               isItemsEnriched: false,
               isDetailsEnriched: false,
@@ -188,6 +201,7 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
         async (err) => await breeEmit.failedAccessingDatabase(err.message, true)
       )
       wave.lastAppid = sublist[sublist.length - 1].id!
+      wave.lastGroup++
       await wave
         .save()
         .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
@@ -205,10 +219,11 @@ async function ingestList(fetchStep: number = 10000, updateStep: number = 1000):
   }
 }
 
-async function ingestItems(): Promise<boolean> {
+async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Promise<boolean> {
   while (true) {
     const steamApps = await Catalogue.query()
       .where('is_items_enriched', false)
+      .andWhereRaw(`MOD("group", ${groupMod}) = ${groupModResult}`)
       .orderBy('id', 'asc')
       .limit(100)
       .catch(async (err) => {
@@ -327,10 +342,11 @@ async function ingestItems(): Promise<boolean> {
   }
 }
 
-async function ingestDetails() {
+async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): Promise<boolean> {
   while (true) {
     const steamApps = await Catalogue.query()
       .where('is_details_enriched', false)
+      .andWhereRaw(`MOD("group", ${groupMod}) = ${groupModResult}`)
       .limit(100)
       .catch(async (err) => {
         await breeEmit.failedAccessingDatabase(err.message, true)
@@ -342,7 +358,9 @@ async function ingestDetails() {
 
     for (const steamApp of steamApps) {
       if (env.get('NODE_ENV') !== 'production')
-        console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
+        console.log(
+          `Enriching ${steamApp.name} (${steamApp.appType}_${steamApp.id}) - ${steamApp.storeUpdatedAt}`
+        )
 
       const [reviews, achievements] = await Promise.all([
         steamData.fetchReviews(steamApp.id),

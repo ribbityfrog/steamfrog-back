@@ -17,6 +17,8 @@ export default class extends BaseSchema {
       table.increments('wave', { primaryKey: false }).notNullable()
 
       table.string('step').notNullable().defaultTo('list')
+
+      table.integer('last_group').notNullable().defaultTo(0)
       table.integer('last_appid').notNullable().defaultTo(0)
     })
     this.schema.raw(

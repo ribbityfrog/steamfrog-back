@@ -11,6 +11,7 @@ export default class extends BaseSchema {
   async up() {
     this.schema.withSchema(this.schemaName).createTable(this.tableName, (table) => {
       table.integer('id').primary()
+      table.integer('group').notNullable()
 
       table.string('app_type').notNullable().defaultTo('new')
 

@@ -17,9 +17,13 @@ export default class SandboxesController {
       .orderBy('id', 'desc')
       .limit(12)
     const steamAppsCount = await db.from(Catalogue.table).count('*')
-    const enrichedDetailsCount = await db
+    const enrichedItemsCount = await db
       .from(Catalogue.table)
       .where('is_items_enriched', true)
+      .count('*')
+    const enrichedDetailsCount = await db
+      .from(Catalogue.table)
+      .where('is_details_enriched', true)
       .count('*')
     const outerAppsCount = await db.from(Catalogue.table).where('app_type', 'outer').count('*')
     const brokenApps = await Catalogue.query().where('app_type', 'broken')
@@ -42,7 +46,8 @@ export default class SandboxesController {
       },
       apps: {
         totalCount: Number(steamAppsCount[0].count),
-        enrichedCount: Number(enrichedDetailsCount[0].count),
+        enrichedItemsCount: Number(enrichedItemsCount[0].count),
+        enrichedDetailsCount: Number(enrichedDetailsCount[0].count),
         outerCount: Number(outerAppsCount[0].count),
         lastEnriched: steamAppsExtract,
       },
@@ -59,6 +64,7 @@ export default class SandboxesController {
       itemPage: await steamData.fetchStoreItem([appid], true),
       reviews: await steamData.fetchReviews(appid, true),
       achievements: await steamData.fetchAchievements(appid, true),
+      base: await Catalogue.findBy('id', appid),
     }
   }
 
