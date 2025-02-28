@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, scope } from '@adonisjs/lucid/orm'
+import { BaseModel, column, manyToMany, scope } from '@adonisjs/lucid/orm'
+import type { ManyToMany } from '@adonisjs/lucid/types/relations'
+
 import type {
   Achievement,
   AppType,
@@ -11,9 +13,14 @@ import type {
   Release,
   Reviews,
 } from '#models/catalogues/types'
+
 import db from '@adonisjs/lucid/services/db'
+import Category from '#models/catalogues/category'
+import Tag from '#models/catalogues/tag'
 
 export default class Catalogue extends BaseModel {
+  static schemaName = 'catalogues'
+  static tableName = 'catalogues'
   static table = 'catalogues.catalogues'
 
   @column({ isPrimary: true })
@@ -97,6 +104,16 @@ export default class Catalogue extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @manyToMany(() => Category, {
+    pivotTable: `${Catalogue.schemaName}.${Catalogue.tableName}_${Category.tableName}`,
+  })
+  declare categories: ManyToMany<typeof Category>
+
+  @manyToMany(() => Tag, {
+    pivotTable: 'catalogues.catalogues_tags',
+  })
+  declare tags: ManyToMany<typeof Tag>
 
   static enrichedGame = scope((query) =>
     query.where('is_enriched', true).andWhere('app_type', 'game')

@@ -1,9 +1,15 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, manyToMany } from '@adonisjs/lucid/orm'
+import type { ManyToMany } from '@adonisjs/lucid/types/relations'
+
 import type { CategoryType } from '#models/catalogues/types'
 
+import Catalogue from '#models/catalogues/catalogue'
+
 export default class Category extends BaseModel {
-  static table = 'catalogues.categories'
+  static schemaName = 'catalogues'
+  static tableName = 'categories'
+  static table = `catalogues.categories`
 
   @column({ isPrimary: true })
   declare id: number
@@ -25,6 +31,11 @@ export default class Category extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @manyToMany(() => Catalogue, {
+    pivotTable: 'catalogues.catalogues_categories',
+  })
+  declare apps: ManyToMany<typeof Catalogue>
 
   static typeCodeToString(typeCodde: number): CategoryType {
     switch (typeCodde) {

@@ -38,7 +38,7 @@ if (wave.step === 'list') {
   await ingestTags()
 
   // const done = await ingestList()
-  const done = await ingestList(1000, 100, true, 1966000)
+  const done = await ingestList(100, 10, true, 1966200)
 
   if (done) {
     wave.step = 'items'
@@ -51,13 +51,13 @@ if (wave.step === 'list') {
 }
 
 if (wave.step === 'items') {
-  const done = await Promise.all([
-    ingestItems(5, 0),
-    ingestItems(5, 1),
-    ingestItems(5, 2),
-    ingestItems(5, 3),
-    ingestItems(5, 4),
-  ])
+  // const done = await Promise.all([
+  //   ingestItems(4, 0),
+  //   ingestItems(4, 1),
+  //   ingestItems(4, 2),
+  //   ingestItems(4, 3),
+  // ])
+  const done = [await ingestItems()]
 
   if (done.every((b) => b === true)) {
     wave.step = 'details'
@@ -71,15 +71,15 @@ if (wave.step === 'items') {
 
 if (wave.step === 'details') {
   const done = await Promise.all([
-    ingestDetails(5, 0),
-    ingestDetails(5, 1),
-    ingestDetails(5, 2),
-    ingestDetails(5, 3),
-    ingestDetails(5, 4),
+    ingestDetails(4, 0),
+    ingestDetails(4, 1),
+    ingestDetails(4, 2),
+    ingestDetails(4, 3),
   ])
 
   if (done.every((b) => b === true)) {
-    wave.step = 'done'
+    // wave.step = 'done'
+    wave.step = 'wait'
     await wave
       .save()
       .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
@@ -275,6 +275,15 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         steamApp.appType = item.type === 0 ? 'game' : 'dlc'
 
         steamApp.parentId = item?.related_items?.parent_appid ?? null
+
+        if (item?.categories !== undefined)
+          for (const categoryIds of Object.values(item.categories))
+            if (categoryIds !== undefined) await steamApp.related('categories').sync(categoryIds)
+        // Object.values(item.categories).forEach(
+        //   async (categoryIds) => await steamApp.related('categories').sync(categoryIds)
+        // )
+
+        if (item.tagids !== undefined) await steamApp.related('tags').sync(item.tagids)
 
         steamApp.release = {
           date: item.release?.steam_release_date

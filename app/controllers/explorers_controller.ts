@@ -64,7 +64,11 @@ export default class SandboxesController {
       itemPage: await steamData.fetchStoreItem([appid], true),
       reviews: await steamData.fetchReviews(appid, true),
       achievements: await steamData.fetchAchievements(appid, true),
-      base: await Catalogue.findBy('id', appid),
+      base: await Catalogue.query()
+        .preload('categories')
+        .preload('tags')
+        .where('id', appid)
+        .first(),
     }
   }
 
