@@ -9,6 +9,8 @@ export default class extends BaseSchema {
   protected appTypesAllowed = appTypes.map((appType) => `'${appType}'`).join(', ')
 
   async up() {
+    this.schema.createSchema(this.schemaName)
+
     this.schema.withSchema(this.schemaName).createTable(this.tableName, (table) => {
       table.integer('id').primary()
       table.integer('group').notNullable()
@@ -35,9 +37,9 @@ export default class extends BaseSchema {
 
       table.jsonb('platforms')
 
-      table.specificType('developers', 'varchar(255)[]').notNullable().defaultTo('{}')
-      table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
-      table.specificType('franchises', 'varchar(255)[]')
+      // table.specificType('developers', 'varchar(255)[]').notNullable().defaultTo('{}')
+      // table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
+      // table.specificType('franchises', 'varchar(255)[]')
 
       // table.specificType('categories', 'integer[]').notNullable().defaultTo('{}')
       // table.specificType('tags', 'integer[]').notNullable().defaultTo('{}')
@@ -64,5 +66,6 @@ export default class extends BaseSchema {
 
   async down() {
     this.schema.withSchema(this.schemaName).dropTable(this.tableName)
+    this.schema.dropSchema(this.schemaName)
   }
 }

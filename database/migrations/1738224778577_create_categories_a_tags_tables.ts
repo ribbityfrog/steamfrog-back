@@ -12,8 +12,6 @@ export default class extends BaseSchema {
     .join(', ')
 
   async up() {
-    this.schema.createSchema(this.cataloguesSchema)
-
     this.schema.withSchema(this.cataloguesSchema).createTable(this.categoriesTable, (table) => {
       table.integer('id').primary()
 
@@ -42,6 +40,5 @@ export default class extends BaseSchema {
   async down() {
     this.schema.withSchema(this.cataloguesSchema).dropTable(this.tagsTable)
     this.schema.withSchema(this.cataloguesSchema).dropTable(this.categoriesTable)
-    this.schema.dropSchema(this.cataloguesSchema)
   }
 }

@@ -17,6 +17,8 @@ import type {
 import db from '@adonisjs/lucid/services/db'
 import Category from '#models/catalogues/category'
 import Tag from '#models/catalogues/tag'
+import Studio from '#models/catalogues/studio'
+import Franchise from '#models/catalogues/franchise'
 
 export default class Catalogue extends BaseModel {
   static schemaName = 'catalogues'
@@ -74,14 +76,14 @@ export default class Catalogue extends BaseModel {
   @column()
   declare platforms: any
 
-  @column()
-  declare developers: string[]
+  // @column()
+  // declare developers: string[]
 
-  @column()
-  declare publishers: string[]
+  // @column()
+  // declare publishers: string[]
 
-  @column()
-  declare franchises: string[]
+  // @column()
+  // declare franchises: string[]
 
   @column()
   declare isFree: boolean
@@ -114,6 +116,16 @@ export default class Catalogue extends BaseModel {
     pivotTable: 'catalogues.catalogues_tags',
   })
   declare tags: ManyToMany<typeof Tag>
+
+  @manyToMany(() => Studio, {
+    pivotTable: 'catalogues.catalogues_studios',
+  })
+  declare studios: ManyToMany<typeof Studio>
+
+  @manyToMany(() => Franchise, {
+    pivotTable: 'catalogues.catalogues_franchises',
+  })
+  declare franchises: ManyToMany<typeof Franchise>
 
   static enrichedGame = scope((query) =>
     query.where('is_enriched', true).andWhere('app_type', 'game')

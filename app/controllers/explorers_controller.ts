@@ -7,6 +7,8 @@ import Wave from '#models/treatments/wave'
 import db from '@adonisjs/lucid/services/db'
 import Category from '#models/catalogues/category'
 import Tag from '#models/catalogues/tag'
+import Studio from '#models/catalogues/studio'
+import Franchise from '#models/catalogues/franchise'
 
 export default class SandboxesController {
   async progress() {
@@ -67,6 +69,8 @@ export default class SandboxesController {
       base: await Catalogue.query()
         .preload('categories')
         .preload('tags')
+        .preload('studios')
+        .preload('franchises')
         .where('id', appid)
         .first(),
     }
@@ -99,5 +103,13 @@ export default class SandboxesController {
       categories: await Category.all(),
       tags: await Tag.all(),
     }
+  }
+
+  async studios() {
+    return await Studio.all()
+  }
+
+  async franchises() {
+    return await Franchise.all()
   }
 }

@@ -6,6 +6,9 @@ export type CategoryType = (typeof categoryTypes)[number]
 export const appTypes = ['new', 'game', 'dlc', 'outer', 'broken', 'trash'] as const
 export type AppType = (typeof appTypes)[number]
 
+export const studioTypes = ['devel', 'publi'] as const
+export type StudioType = (typeof studioTypes)[number]
+
 export type Reviews = {
   score: number
   scoreName: string

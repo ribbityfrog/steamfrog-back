@@ -2,11 +2,11 @@ import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class extends BaseSchema {
   protected schemaName = 'catalogues'
-  protected catalogueCategoryTable = 'catalogues_categories'
-  protected catalogueTagTable = 'catalogues_tags'
+  protected cataloguesCategoriesTable = 'catalogues_categories'
+  protected cataloguesTagsTable = 'catalogues_tags'
 
   async up() {
-    this.schema.withSchema(this.schemaName).createTable(this.catalogueCategoryTable, (table) => {
+    this.schema.withSchema(this.schemaName).createTable(this.cataloguesCategoriesTable, (table) => {
       table.increments('id').primary()
 
       table
@@ -24,7 +24,7 @@ export default class extends BaseSchema {
       table.unique(['catalogue_id', 'category_id'])
     })
 
-    this.schema.withSchema(this.schemaName).createTable(this.catalogueTagTable, (table) => {
+    this.schema.withSchema(this.schemaName).createTable(this.cataloguesTagsTable, (table) => {
       table.increments('id').primary()
 
       table
@@ -44,7 +44,7 @@ export default class extends BaseSchema {
   }
 
   async down() {
-    this.schema.withSchema(this.schemaName).dropTable(this.catalogueTagTable)
-    this.schema.withSchema(this.schemaName).dropTable(this.catalogueCategoryTable)
+    this.schema.withSchema(this.schemaName).dropTable(this.cataloguesTagsTable)
+    this.schema.withSchema(this.schemaName).dropTable(this.cataloguesCategoriesTable)
   }
 }

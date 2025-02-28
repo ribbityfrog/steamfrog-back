@@ -16,10 +16,10 @@ const app = await igniteApp()
 const { default: db } = await import('@adonisjs/lucid/services/db')
 const { default: Catalogue } = await import('#models/catalogues/catalogue')
 const { default: Wave } = await import('#models/treatments/wave')
-type CatalogueType = InstanceType<typeof Catalogue>
-type WaveType = InstanceType<typeof Wave>
+type CatalogueModel = InstanceType<typeof Catalogue>
+type WaveModel = InstanceType<typeof Wave>
 
-let tryWave: WaveType | null
+let tryWave: WaveModel | null
 try {
   tryWave = await Wave.query().orderBy('wave', 'desc').whereNot('step', 'done').first()
 
@@ -38,7 +38,7 @@ if (wave.step === 'list') {
   await ingestTags()
 
   // const done = await ingestList()
-  const done = await ingestList(100, 10, true, 1966200)
+  const done = await ingestList(100, 10, true, 1966000)
 
   if (done) {
     wave.step = 'items'
@@ -187,7 +187,7 @@ async function ingestList(
     while (list.apps?.length > 0) {
       let iteStep = updateStep
 
-      const sublist: Partial<CatalogueType>[] = list.apps
+      const sublist: Partial<CatalogueModel>[] = list.apps
         .splice(0, list.apps.length > iteStep ? iteStep : list.apps.length)
         .map(
           (steamApp) =>
@@ -198,7 +198,7 @@ async function ingestList(
               isItemsEnriched: false,
               isDetailsEnriched: false,
               storeUpdatedAt: DateTime.fromSeconds(steamApp.last_modified),
-            }) satisfies Partial<CatalogueType>
+            }) satisfies Partial<CatalogueModel>
         )
 
       if (env.get('NODE_ENV') !== 'production')
@@ -229,6 +229,12 @@ async function ingestList(
 }
 
 async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Promise<boolean> {
+  const { default: Studio } = await import('#models/catalogues/studio')
+  type StudioModel = InstanceType<typeof Studio>
+
+  const { default: Franchise } = await import('#models/catalogues/franchise')
+  type FranchiseModel = InstanceType<typeof Franchise>
+
   while (true) {
     const steamApps = await Catalogue.query()
       .where('is_items_enriched', false)
@@ -263,7 +269,7 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         continue
 
       if (env.get('NODE_ENV') !== 'production')
-        console.log(`Enriching ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
+        console.log(`Detailing ${steamApp.name} (${steamApp.id}) - ${steamApp.storeUpdatedAt}`)
 
       if (item.visible === false) {
         steamApp.appType = item.unvailable_for_country_restriction === true ? 'outer' : 'broken'
@@ -279,9 +285,6 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         if (item?.categories !== undefined)
           for (const categoryIds of Object.values(item.categories))
             if (categoryIds !== undefined) await steamApp.related('categories').sync(categoryIds)
-        // Object.values(item.categories).forEach(
-        //   async (categoryIds) => await steamApp.related('categories').sync(categoryIds)
-        // )
 
         if (item.tagids !== undefined) await steamApp.related('tags').sync(item.tagids)
 
@@ -306,15 +309,42 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
 
         steamApp.platforms = item.platforms
 
-        steamApp.developers = item.basic_info?.developers
-          ? item.basic_info.developers.map((deveveloper) => deveveloper.name.substring(0, 255))
-          : []
-        steamApp.publishers = item.basic_info?.publishers
-          ? item.basic_info.publishers.map((publisher) => publisher.name.substring(0, 255))
-          : []
-        steamApp.franchises = item.basic_info?.franchises
-          ? item.basic_info.franchises.map((franchise) => franchise.name.substring(0, 255))
-          : []
+        // steamApp.developers = item.basic_info?.developers
+        //   ? item.basic_info.developers.map((deveveloper) => deveveloper.name.substring(0, 255))
+        //   : []
+        // steamApp.publishers = item.basic_info?.publishers
+        //   ? item.basic_info.publishers.map((publisher) => publisher.name.substring(0, 255))
+        //   : []
+        // steamApp.franchises = item.basic_info?.franchises
+        //   ? item.basic_info.franchises.map((franchise) => franchise.name.substring(0, 255))
+        //   : []
+
+        const developers =
+          item.basic_info?.developers?.map((deveveloper) => ({
+            type: 'devel' as const,
+            name: deveveloper.name.substring(0, 255),
+          })) ?? []
+
+        const publishers =
+          item.basic_info?.publishers?.map((publisher) => ({
+            type: 'publi' as const,
+            name: publisher.name.substring(0, 255),
+          })) ?? []
+
+        const studios = [...developers, ...publishers]
+        let studioInstances: StudioModel[] = []
+        if (publishers.length > 0)
+          studioInstances = await Studio.updateOrCreateMany(['type', 'name'], studios)
+        steamApp.related('studios').sync(studioInstances.map((studio) => studio.id))
+
+        const franchises =
+          item.basic_info?.franchises?.map((franchise) => ({
+            name: franchise.name.substring(0, 255),
+          })) ?? []
+        let franchiseInstances: FranchiseModel[] = []
+        if (franchises.length > 0)
+          franchiseInstances = await Franchise.updateOrCreateMany('name', franchises)
+        steamApp.related('franchises').sync(franchiseInstances.map((franchise) => franchise.id))
 
         steamApp.isFree = item?.is_free === true
 

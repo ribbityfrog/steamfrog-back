@@ -35,5 +35,7 @@ router
     router.get('stats', [explorersController, 'stats'])
     router.get('edit', [explorersController, 'edit'])
     router.get('catags', [explorersController, 'catags'])
+    router.get('studios', [explorersController, 'studios'])
+    router.get('franchises', [explorersController, 'franchises'])
   })
   .prefix('explore')
