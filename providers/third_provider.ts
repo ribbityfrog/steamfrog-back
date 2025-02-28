@@ -41,7 +41,10 @@ export default class ThirdProvider {
    * The process has been started
    */
   async ready() {
-    if (env.get('NODE_ENV', 'development') === 'production') {
+    if (
+      env.get('NODE_ENV', 'development') === 'production' ||
+      env.get('INGEST_FORCE', 'no') === 'yes'
+    ) {
       const scheduler = await this.app.container.make(Bree)
       await scheduler
         .start()

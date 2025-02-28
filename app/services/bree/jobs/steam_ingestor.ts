@@ -37,7 +37,8 @@ if (wave.step === 'list') {
   await ingestCategories()
   await ingestTags()
 
-  const done = await ingestList()
+  // const done = await ingestList()
+  const done = await ingestList(1000, 100, true, 1966000)
 
   if (done) {
     wave.step = 'items'
@@ -157,12 +158,20 @@ async function ingestTags() {
   await discordMessage.custom('[worker_steam-ingestor] Tags done updated')
 }
 
-async function ingestList(fetchStep: number = 20000, updateStep: number = 1000): Promise<boolean> {
+async function ingestList(
+  fetchStep: number = 20000,
+  updateStep: number = 1000,
+  partialForTests: boolean = false,
+  forceIngestStart: number = 0
+): Promise<boolean> {
   while (true) {
     let list: SteamAPIStoreList | undefined
 
     try {
-      const listResponse = await steamData.fetchStoreList(wave.lastAppid, fetchStep)
+      const listResponse = await steamData.fetchStoreList(
+        forceIngestStart > 0 ? forceIngestStart : wave.lastAppid,
+        fetchStep
+      )
       list = listResponse.content
     } catch (issue) {
       const reason = issue as SteamDataReject
@@ -207,7 +216,7 @@ async function ingestList(fetchStep: number = 20000, updateStep: number = 1000):
         .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
     }
 
-    if (!list?.have_more_results) {
+    if (!list?.have_more_results || partialForTests) {
       await db
         .from(Catalogue.table)
         .whereRaw('store_updated_at = store_lastly_updated_at')
