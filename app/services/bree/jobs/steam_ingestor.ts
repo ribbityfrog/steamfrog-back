@@ -230,10 +230,11 @@ async function ingestList(
 
 async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Promise<boolean> {
   const { default: Studio } = await import('#models/catalogues/studio')
-  type StudioModel = InstanceType<typeof Studio>
-
   const { default: Franchise } = await import('#models/catalogues/franchise')
+  const { default: Descriptor } = await import('#models/catalogues/descriptor')
+  type StudioModel = InstanceType<typeof Studio>
   type FranchiseModel = InstanceType<typeof Franchise>
+  type DescriptorModel = InstanceType<typeof Descriptor>
 
   while (true) {
     const steamApps = await Catalogue.query()
@@ -284,9 +285,17 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
 
         if (item?.categories !== undefined)
           for (const categoryIds of Object.values(item.categories))
-            if (categoryIds !== undefined) await steamApp.related('categories').sync(categoryIds)
+            if (categoryIds !== undefined)
+              await steamApp
+                .related('categories')
+                .sync(categoryIds)
+                .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
-        if (item.tagids !== undefined) await steamApp.related('tags').sync(item.tagids)
+        if (item.tagids !== undefined)
+          await steamApp
+            .related('tags')
+            .sync(item.tagids)
+            .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
         steamApp.release = {
           date: item.release?.steam_release_date
@@ -304,8 +313,21 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           : {
               type: item.game_rating.type,
               rating: item.game_rating.rating,
-              descriptors: item.game_rating?.descriptors ?? [],
+              // descriptors: item.game_rating?.descriptors ?? [],
             }
+        let descriptorsInstances: DescriptorModel[] = []
+        if (
+          item?.game_rating?.descriptors !== undefined &&
+          item?.game_rating?.descriptors.length > 0
+        ) {
+          descriptorsInstances = await Descriptor.updateOrCreateMany(
+            'name',
+            item.game_rating.descriptors.map((name) => ({ name }))
+          )
+        }
+        await steamApp
+          .related('descriptors')
+          .sync(descriptorsInstances.map((descriptor) => descriptor.id))
 
         steamApp.platforms = item.platforms
 
@@ -334,8 +356,16 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         const studios = [...developers, ...publishers]
         let studioInstances: StudioModel[] = []
         if (publishers.length > 0)
-          studioInstances = await Studio.updateOrCreateMany(['type', 'name'], studios)
-        steamApp.related('studios').sync(studioInstances.map((studio) => studio.id))
+          studioInstances = await Studio.updateOrCreateMany(['type', 'name'], studios).catch(
+            async (err) => {
+              await breeEmit.failedAccessingDatabase(err.message, true)
+              return []
+            }
+          )
+        await steamApp
+          .related('studios')
+          .sync(studioInstances.map((studio) => studio.id))
+          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
         const franchises =
           item.basic_info?.franchises?.map((franchise) => ({
@@ -343,8 +373,16 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           })) ?? []
         let franchiseInstances: FranchiseModel[] = []
         if (franchises.length > 0)
-          franchiseInstances = await Franchise.updateOrCreateMany('name', franchises)
-        steamApp.related('franchises').sync(franchiseInstances.map((franchise) => franchise.id))
+          franchiseInstances = await Franchise.updateOrCreateMany('name', franchises).catch(
+            async (err) => {
+              await breeEmit.failedAccessingDatabase(err.message, true)
+              return []
+            }
+          )
+        await steamApp
+          .related('franchises')
+          .sync(franchiseInstances.map((franchise) => franchise.id))
+          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
         steamApp.isFree = item?.is_free === true
 

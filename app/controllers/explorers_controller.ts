@@ -9,6 +9,7 @@ import Category from '#models/catalogues/category'
 import Tag from '#models/catalogues/tag'
 import Studio from '#models/catalogues/studio'
 import Franchise from '#models/catalogues/franchise'
+import Descriptor from '#models/catalogues/descriptor'
 
 export default class SandboxesController {
   async progress() {
@@ -111,5 +112,9 @@ export default class SandboxesController {
 
   async franchises() {
     return await Franchise.all()
+  }
+
+  async descriptors() {
+    return await Descriptor.all()
   }
 }

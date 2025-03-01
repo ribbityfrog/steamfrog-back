@@ -19,6 +19,7 @@ import Category from '#models/catalogues/category'
 import Tag from '#models/catalogues/tag'
 import Studio from '#models/catalogues/studio'
 import Franchise from '#models/catalogues/franchise'
+import Descriptor from '#models/catalogues/descriptor'
 
 export default class Catalogue extends BaseModel {
   static schemaName = 'catalogues'
@@ -126,6 +127,11 @@ export default class Catalogue extends BaseModel {
     pivotTable: 'catalogues.catalogues_franchises',
   })
   declare franchises: ManyToMany<typeof Franchise>
+
+  @manyToMany(() => Descriptor, {
+    pivotTable: 'catalogues.catalogues_descriptors',
+  })
+  declare descriptors: ManyToMany<typeof Descriptor>
 
   static enrichedGame = scope((query) =>
     query.where('is_enriched', true).andWhere('app_type', 'game')

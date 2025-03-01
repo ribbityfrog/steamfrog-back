@@ -37,5 +37,6 @@ router
     router.get('catags', [explorersController, 'catags'])
     router.get('studios', [explorersController, 'studios'])
     router.get('franchises', [explorersController, 'franchises'])
+    router.get('descriptors', [explorersController, 'descriptors'])
   })
   .prefix('explore')

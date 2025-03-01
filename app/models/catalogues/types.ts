@@ -34,7 +34,7 @@ export type Release = {
 export type Rating = {
   type: string
   rating: string
-  descriptors: string[]
+  // descriptors: string[]
 }
 
 // export type Platforms = {
