@@ -133,6 +133,7 @@ interface SteamAPIVisibleStoreItem {
   }
   supported_languages?: {
     elanguage: number
+    eadditionallanguage: number
     supported: boolean
     full_audio: boolean
     subtitles: boolean

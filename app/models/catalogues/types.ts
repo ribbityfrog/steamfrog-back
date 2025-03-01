@@ -34,6 +34,7 @@ export type Release = {
 export type Rating = {
   type: string
   rating: string
+  age: number
   // descriptors: string[]
 }
 
@@ -50,13 +51,13 @@ export type Pricing = {
   isPrePurchase: boolean
 }
 
-export type Language = {
-  elanguage: number
-  language: string
-  supported: boolean
-  audio: boolean
-  subtitles: boolean
-}
+// export type Language = {
+//   elanguage: number
+//   language: string
+//   supported: boolean
+//   audio: boolean
+//   subtitles: boolean
+// }
 
 export type Metacritic = {
   score: number

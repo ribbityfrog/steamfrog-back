@@ -19,6 +19,8 @@ const { default: Wave } = await import('#models/treatments/wave')
 type CatalogueModel = InstanceType<typeof Catalogue>
 type WaveModel = InstanceType<typeof Wave>
 
+const ingestTest = env.get('INGEST_TEST', 'no') === 'yes' ? true : false
+
 let tryWave: WaveModel | null
 try {
   tryWave = await Wave.query().orderBy('wave', 'desc').whereNot('step', 'done').first()
@@ -37,8 +39,7 @@ if (wave.step === 'list') {
   await ingestCategories()
   await ingestTags()
 
-  // const done = await ingestList()
-  const done = await ingestList(100, 10, true, 1966000)
+  const done = ingestTest ? await ingestList(100, 10, true, 1966000) : await ingestList()
 
   if (done) {
     wave.step = 'items'
@@ -78,8 +79,7 @@ if (wave.step === 'details') {
   ])
 
   if (done.every((b) => b === true)) {
-    // wave.step = 'done'
-    wave.step = 'wait'
+    wave.step = ingestTest ? 'wait' : 'done'
     await wave
       .save()
       .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
@@ -232,9 +232,18 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
   const { default: Studio } = await import('#models/catalogues/studio')
   const { default: Franchise } = await import('#models/catalogues/franchise')
   const { default: Descriptor } = await import('#models/catalogues/descriptor')
+  const { default: Language } = await import('#models/catalogues/language')
   type StudioModel = InstanceType<typeof Studio>
   type FranchiseModel = InstanceType<typeof Franchise>
   type DescriptorModel = InstanceType<typeof Descriptor>
+
+  const allLanguages = await Language.query()
+    .select('id')
+    .catch(async (err) => {
+      await breeEmit.failedAccessingDatabase(err.message, true)
+      return []
+    })
+  const languageCodes = allLanguages.map((language) => language.id)
 
   while (true) {
     const steamApps = await Catalogue.query()
@@ -313,7 +322,7 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           : {
               type: item.game_rating.type,
               rating: item.game_rating.rating,
-              // descriptors: item.game_rating?.descriptors ?? [],
+              age: item.game_rating?.required_age ?? -1,
             }
         let descriptorsInstances: DescriptorModel[] = []
         if (
@@ -330,16 +339,6 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           .sync(descriptorsInstances.map((descriptor) => descriptor.id))
 
         steamApp.platforms = item.platforms
-
-        // steamApp.developers = item.basic_info?.developers
-        //   ? item.basic_info.developers.map((deveveloper) => deveveloper.name.substring(0, 255))
-        //   : []
-        // steamApp.publishers = item.basic_info?.publishers
-        //   ? item.basic_info.publishers.map((publisher) => publisher.name.substring(0, 255))
-        //   : []
-        // steamApp.franchises = item.basic_info?.franchises
-        //   ? item.basic_info.franchises.map((franchise) => franchise.name.substring(0, 255))
-        //   : []
 
         const developers =
           item.basic_info?.developers?.map((deveveloper) => ({
@@ -398,16 +397,37 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
             }
           : null
 
-        steamApp.languages =
-          item?.supported_languages && item.supported_languages?.length > 0
-            ? item.supported_languages.map((language) => ({
-                elanguage: language.elanguage,
-                language: 'unknown',
+        if (steamApp.appType === 'game') {
+          const languages: Record<
+            number,
+            {
+              supported: boolean
+              audio: boolean
+              subtitles: boolean
+            }
+          > = {}
+          if (item?.supported_languages && item.supported_languages?.length > 0) {
+            let hasMissingLanguages = false
+            for (const language of item.supported_languages) {
+              let elang =
+                language.elanguage === -1 ? language.eadditionallanguage + 1000 : language.elanguage
+              if (!languageCodes.includes(elang)) {
+                hasMissingLanguages = true
+                continue
+              }
+              languages[elang] = {
                 supported: language.supported,
                 audio: language.full_audio,
                 subtitles: language.subtitles,
-              }))
-            : []
+              }
+            }
+            if (hasMissingLanguages)
+              await discordMessage.custom(
+                '(worker_steam-details) Missing language(s) for ' + steamApp.id
+              )
+          }
+          await steamApp.related('languages').sync(languages)
+        }
 
         steamApp.media = {
           screenshotCount: item?.screenshots?.all_ages_screenshots?.length ?? 0,

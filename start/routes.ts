@@ -38,5 +38,6 @@ router
     router.get('studios', [explorersController, 'studios'])
     router.get('franchises', [explorersController, 'franchises'])
     router.get('descriptors', [explorersController, 'descriptors'])
+    router.get('languages', [explorersController, 'languages'])
   })
   .prefix('explore')

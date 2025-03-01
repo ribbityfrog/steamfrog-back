@@ -10,6 +10,7 @@ import Tag from '#models/catalogues/tag'
 import Studio from '#models/catalogues/studio'
 import Franchise from '#models/catalogues/franchise'
 import Descriptor from '#models/catalogues/descriptor'
+import Language from '#models/catalogues/language'
 
 export default class SandboxesController {
   async progress() {
@@ -116,5 +117,9 @@ export default class SandboxesController {
 
   async descriptors() {
     return await Descriptor.all()
+  }
+
+  async languages() {
+    return await Language.all()
   }
 }

@@ -30,6 +30,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   INGEST_FORCE: Env.schema.enum.optional(['yes', 'no'] as const),
+  INGEST_TEST: Env.schema.enum.optional(['yes', 'no'] as const),
 
   /*
   |----------------------------------------------------------
