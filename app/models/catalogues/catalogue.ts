@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, manyToMany, scope } from '@adonisjs/lucid/orm'
-import type { ManyToMany } from '@adonisjs/lucid/types/relations'
+import { BaseModel, column, hasOne, manyToMany, scope } from '@adonisjs/lucid/orm'
+import type { HasOne, ManyToMany } from '@adonisjs/lucid/types/relations'
 
 import type {
   Achievement,
@@ -10,7 +10,6 @@ import type {
   Pricing,
   Rating,
   Release,
-  Reviews,
 } from '#models/catalogues/types'
 
 import db from '@adonisjs/lucid/services/db'
@@ -20,6 +19,7 @@ import Studio from '#models/catalogues/studio'
 import Franchise from '#models/catalogues/franchise'
 import Descriptor from '#models/catalogues/descriptor'
 import Language from '#models/catalogues/language'
+import Review from '#models/catalogues/review'
 
 export default class Catalogue extends BaseModel {
   static schemaName = 'catalogues'
@@ -60,9 +60,6 @@ export default class Catalogue extends BaseModel {
   declare areAchievementsEnriched: boolean
 
   @column()
-  declare reviews: Reviews
-
-  @column()
   declare achievements: Achievement[] | null
 
   @column()
@@ -77,24 +74,11 @@ export default class Catalogue extends BaseModel {
   @column()
   declare platforms: any
 
-  // @column()
-  // declare developers: string[]
-
-  // @column()
-  // declare publishers: string[]
-
-  // @column()
-  // declare franchises: string[]
-
   @column()
   declare isFree: boolean
 
   @column()
   declare pricing: Pricing | null
-
-  // @column({ prepare: (value: Language[]) => JSON.stringify(value) })
-  // @column()
-  // declare languages: Language[]
 
   @column()
   declare metacritic: Metacritic | null
@@ -137,6 +121,9 @@ export default class Catalogue extends BaseModel {
     pivotTable: 'catalogues.catalogues_languages',
   })
   declare languages: ManyToMany<typeof Language>
+
+  @hasOne(() => Review)
+  declare review: HasOne<typeof Review>
 
   static enrichedGame = scope((query) =>
     query.where('is_enriched', true).andWhere('app_type', 'game')

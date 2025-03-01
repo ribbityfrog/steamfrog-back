@@ -9,13 +9,13 @@ export type AppType = (typeof appTypes)[number]
 export const studioTypes = ['devel', 'publi'] as const
 export type StudioType = (typeof studioTypes)[number]
 
-export type Reviews = {
-  score: number
-  scoreName: string
-  positiveCount: number
-  negativeCount: number
-  totalCount: number
-}
+// export type Reviews = {
+//   score: number
+//   scoreName: string
+//   positiveCount: number
+//   negativeCount: number
+//   totalCount: number
+// }
 
 export type Achievement = {
   name: string

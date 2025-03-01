@@ -6,7 +6,7 @@ import Catalogue from '#models/catalogues/catalogue'
 export default class Descriptor extends BaseModel {
   static schemaName = 'catalogues'
   static tableName = 'descriptors'
-  static table = `${this.schemaName}.${this.tableName}`
+  static table = 'catalogues.descriptors'
 
   @column({ isPrimary: true })
   declare id: number

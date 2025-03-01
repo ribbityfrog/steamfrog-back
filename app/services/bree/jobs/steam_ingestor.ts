@@ -454,6 +454,7 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
       .where('is_details_enriched', false)
       .andWhereRaw(`MOD("group", ${groupMod}) = ${groupModResult}`)
       .limit(100)
+      .preload('review')
       .catch(async (err) => {
         await breeEmit.failedAccessingDatabase(err.message, true)
         return null
@@ -476,13 +477,20 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
         process.exit(1)
       })
 
-      steamApp.reviews = {
-        score: reviews.content.review_score,
-        scoreName: reviews.content.review_score_desc,
-        positiveCount: reviews.content.total_positive,
-        negativeCount: reviews.content.total_negative,
-        totalCount: reviews.content.total_reviews,
+      const review = {
+        scoreRounded: reviews.content.review_score,
+        scorePercent:
+          reviews.content.total_reviews > 0
+            ? Math.trunc(
+                (reviews.content.total_positive / reviews.content.total_reviews) * 100 * 1000
+              )
+            : 0,
+        countPositive: reviews.content.total_positive,
+        countNegative: reviews.content.total_negative,
+        countAll: reviews.content.total_reviews,
       }
+      if (steamApp.review) steamApp.review.merge(review)
+      else await steamApp.related('review').create(review)
 
       if (achievements)
         steamApp.achievements =

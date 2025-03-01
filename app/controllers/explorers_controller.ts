@@ -73,6 +73,8 @@ export default class SandboxesController {
         .preload('tags')
         .preload('studios')
         .preload('franchises')
+        .preload('languages')
+        .preload('review')
         .where('id', appid)
         .first(),
     }

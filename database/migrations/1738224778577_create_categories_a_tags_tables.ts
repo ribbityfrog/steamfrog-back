@@ -19,9 +19,6 @@ export default class extends BaseSchema {
       table.string('name').notNullable()
       table.integer('order').notNullable().defaultTo(99999)
       table.string('logo').notNullable()
-
-      table.timestamp('created_at')
-      table.timestamp('updated_at')
     })
     this.schema.raw(
       `ALTER TABLE ${this.cataloguesSchema}.${this.categoriesTable} ADD CONSTRAINT type_allowed CHECK (type IN (${this.categoryTypesAllowed}))`
@@ -31,9 +28,6 @@ export default class extends BaseSchema {
       table.integer('id').primary()
 
       table.string('name').notNullable()
-
-      table.timestamp('created_at')
-      table.timestamp('updated_at')
     })
   }
 
