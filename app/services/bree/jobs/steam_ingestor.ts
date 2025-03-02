@@ -335,7 +335,20 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         ) {
           descriptorsInstances = await Descriptor.updateOrCreateMany(
             'name',
-            item.game_rating.descriptors.map((name) => ({ name: name.substring(0, 127) }))
+            item.game_rating.descriptors.reduce<Array<{ name: string }>>((acc, currents) => {
+              const cleanedCurrents = currents
+                .replace(/<[^>]*>/g, '')
+                .split(',')
+                .map((name) => name.trim())
+              for (const cleanedCurrent of cleanedCurrents)
+                if (
+                  cleanedCurrent.length > 0 &&
+                  acc.find((f) => f.name === cleanedCurrent) === undefined
+                )
+                  acc.push({ name: cleanedCurrent })
+              return acc
+            }, [])
+            // item.game_rating.descriptors.map((name) => ({ name: name.substring(0, 127) }))
           ).catch(async (err) => {
             await breeEmit.failedAccessingDatabase(err.message, true)
             return []
@@ -351,8 +364,12 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         const developers =
           item.basic_info?.developers?.reduce<Array<{ type: 'devel'; name: string }>>(
             (acc, current) => {
-              if (acc.find((devel) => devel.name === current.name) === undefined)
-                acc.push({ type: 'devel', name: current.name.substring(0, 255) })
+              const cleanedCurrent = current.name.substring(0, 255).trim()
+              if (
+                cleanedCurrent.length > 0 &&
+                acc.find((devel) => devel.name === cleanedCurrent) === undefined
+              )
+                acc.push({ type: 'devel', name: cleanedCurrent })
               return acc
             },
             []
@@ -361,8 +378,12 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         const publishers =
           item.basic_info?.publishers?.reduce<Array<{ type: 'publi'; name: string }>>(
             (acc, current) => {
-              if (acc.find((publi) => publi.name === current.name) === undefined)
-                acc.push({ type: 'publi', name: current.name.substring(0, 255) })
+              const cleanedCurrent = current.name.substring(0, 255).trim()
+              if (
+                cleanedCurrent.length > 0 &&
+                acc.find((publi) => publi.name === current.name) === undefined
+              )
+                acc.push({ type: 'publi', name: cleanedCurrent })
               return acc
             },
             []
@@ -384,8 +405,12 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
 
         const franchises =
           item.basic_info?.franchises?.reduce<Array<{ name: string }>>((acc, current) => {
-            if (acc.find((f) => f.name === current.name) === undefined)
-              acc.push({ name: current.name.substring(0, 255) })
+            const cleanedCurrent = current.name.substring(0, 255).trim()
+            if (
+              cleanedCurrent.length > 0 &&
+              acc.find((f) => f.name === cleanedCurrent) === undefined
+            )
+              acc.push({ name: cleanedCurrent })
             return []
           }, []) ?? []
 
