@@ -17,11 +17,11 @@ export default class extends BaseSchema {
         .inTable(`${this.cataloguesSchema}.catalogues`)
         .onDelete('CASCADE')
 
-      table.integer('score_rounded').notNullable().defaultTo(-1)
-      table.integer('score_percent').notNullable().defaultTo(-1)
-      table.integer('count_positive').notNullable().defaultTo(-1)
-      table.integer('count_negative').notNullable().defaultTo(-1)
-      table.integer('count_all').notNullable().defaultTo(-1)
+      table.integer('score_rounded').notNullable()
+      table.integer('score_percent').notNullable()
+      table.integer('count_positive').notNullable()
+      table.integer('count_negative').notNullable()
+      table.integer('count_all').notNullable()
     })
   }
 

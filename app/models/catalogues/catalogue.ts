@@ -1,16 +1,8 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, hasOne, manyToMany, scope } from '@adonisjs/lucid/orm'
-import type { HasOne, ManyToMany } from '@adonisjs/lucid/types/relations'
+import { BaseModel, column, hasOne, hasMany, manyToMany, scope } from '@adonisjs/lucid/orm'
+import type { HasOne, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 
-import type {
-  Achievement,
-  AppType,
-  Media,
-  Metacritic,
-  Pricing,
-  Rating,
-  Release,
-} from '#models/catalogues/types'
+import type { AppType, Media, Metacritic, Pricing, Rating, Release } from '#models/catalogues/types'
 
 import db from '@adonisjs/lucid/services/db'
 import Category from '#models/catalogues/category'
@@ -20,6 +12,7 @@ import Franchise from '#models/catalogues/franchise'
 import Descriptor from '#models/catalogues/descriptor'
 import Language from '#models/catalogues/language'
 import Review from '#models/catalogues/review'
+import Achievement from '#models/catalogues/achievement'
 
 export default class Catalogue extends BaseModel {
   static schemaName = 'catalogues'
@@ -58,9 +51,6 @@ export default class Catalogue extends BaseModel {
 
   @column()
   declare areAchievementsEnriched: boolean
-
-  @column()
-  declare achievements: Achievement[] | null
 
   @column()
   declare release: Release
@@ -124,6 +114,9 @@ export default class Catalogue extends BaseModel {
 
   @hasOne(() => Review)
   declare review: HasOne<typeof Review>
+
+  @hasMany(() => Achievement)
+  declare achievements: HasMany<typeof Achievement>
 
   static enrichedGame = scope((query) =>
     query.where('is_enriched', true).andWhere('app_type', 'game')

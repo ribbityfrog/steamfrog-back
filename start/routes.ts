@@ -39,5 +39,7 @@ router
     router.get('franchises', [explorersController, 'franchises'])
     router.get('descriptors', [explorersController, 'descriptors'])
     router.get('languages', [explorersController, 'languages'])
+    router.get('reviews', [explorersController, 'reviews'])
+    router.get('achievements', [explorersController, 'achievements'])
   })
   .prefix('explore')

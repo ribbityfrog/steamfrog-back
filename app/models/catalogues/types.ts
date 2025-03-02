@@ -17,12 +17,12 @@ export type StudioType = (typeof studioTypes)[number]
 //   totalCount: number
 // }
 
-export type Achievement = {
-  name: string
-  description: string
-  hidden: boolean
-  percent: number
-}
+// export type Achievement = {
+//   name: string
+//   description: string
+//   hidden: boolean
+//   percent: number
+// }
 
 export type Release = {
   isReleased: boolean

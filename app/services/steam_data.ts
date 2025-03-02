@@ -144,7 +144,7 @@ class SteamData {
             name: schema.displayName,
             description: schema.description,
             hidden: Boolean(schema.hidden),
-            percent: Math.round(achievement.percent * 100) / 100,
+            percent: Number.parseFloat(achievement.percent) * 10,
           } satisfies SteamAPIAchievement
         }),
     }

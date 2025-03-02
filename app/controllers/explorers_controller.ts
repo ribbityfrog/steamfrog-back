@@ -11,6 +11,8 @@ import Studio from '#models/catalogues/studio'
 import Franchise from '#models/catalogues/franchise'
 import Descriptor from '#models/catalogues/descriptor'
 import Language from '#models/catalogues/language'
+import Review from '#models/catalogues/review'
+import Achievement from '#models/catalogues/achievement'
 
 export default class SandboxesController {
   async progress() {
@@ -75,6 +77,7 @@ export default class SandboxesController {
         .preload('franchises')
         .preload('languages')
         .preload('review')
+        .preload('achievements')
         .where('id', appid)
         .first(),
     }
@@ -123,5 +126,13 @@ export default class SandboxesController {
 
   async languages() {
     return await Language.all()
+  }
+
+  async reviews() {
+    return await Review.query().limit(100)
+  }
+
+  async achievements() {
+    return await Achievement.query().limit(100)
   }
 }

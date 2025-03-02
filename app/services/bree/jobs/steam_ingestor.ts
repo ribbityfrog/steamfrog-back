@@ -9,8 +9,6 @@ import type { SteamDataReject, SteamAPIStoreList } from '#services/steam_data/ty
 
 import steamData from '#services/steam_data'
 
-import { Achievement } from '#models/catalogues/types'
-
 const app = await igniteApp()
 
 const { default: db } = await import('@adonisjs/lucid/services/db')
@@ -39,7 +37,7 @@ if (wave.step === 'list') {
   await ingestCategories()
   await ingestTags()
 
-  const done = ingestTest ? await ingestList(100, 10, true, 1966000) : await ingestList()
+  const done = ingestTest ? await ingestList(20000, 1000, true, 1966000) : await ingestList()
 
   if (done) {
     wave.step = 'items'
@@ -52,13 +50,15 @@ if (wave.step === 'list') {
 }
 
 if (wave.step === 'items') {
-  // const done = await Promise.all([
-  //   ingestItems(4, 0),
-  //   ingestItems(4, 1),
-  //   ingestItems(4, 2),
-  //   ingestItems(4, 3),
-  // ])
-  const done = [await ingestItems()]
+  await discordMessage.custom('(worker_steam-ingestor) Steam items started')
+
+  const done = await Promise.all([
+    ingestItems(4, 0),
+    ingestItems(4, 1),
+    ingestItems(4, 2),
+    ingestItems(4, 3),
+  ])
+  // const done = [await ingestItems()]
 
   if (done.every((b) => b === true)) {
     wave.step = 'details'
@@ -71,6 +71,9 @@ if (wave.step === 'items') {
 }
 
 if (wave.step === 'details') {
+  await discordMessage.custom(
+    '(worker_steam-ingestor) Steam details (reviews + achievements) started'
+  )
   const done = await Promise.all([
     ingestDetails(4, 0),
     ingestDetails(4, 1),
@@ -331,26 +334,38 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         ) {
           descriptorsInstances = await Descriptor.updateOrCreateMany(
             'name',
-            item.game_rating.descriptors.map((name) => ({ name }))
-          )
+            item.game_rating.descriptors.map((name) => ({ name: name.substring(0, 127) }))
+          ).catch(async (err) => {
+            await breeEmit.failedAccessingDatabase(err.message, true)
+            return []
+          })
         }
         await steamApp
           .related('descriptors')
           .sync(descriptorsInstances.map((descriptor) => descriptor.id))
+          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
         steamApp.platforms = item.platforms
 
         const developers =
-          item.basic_info?.developers?.map((deveveloper) => ({
-            type: 'devel' as const,
-            name: deveveloper.name.substring(0, 255),
-          })) ?? []
+          item.basic_info?.developers?.reduce<Array<{ type: 'devel'; name: string }>>(
+            (acc, current) => {
+              if (acc.find((devel) => devel.name === current.name) === undefined)
+                acc.push({ type: 'devel', name: current.name.substring(0, 255) })
+              return acc
+            },
+            []
+          ) ?? []
 
         const publishers =
-          item.basic_info?.publishers?.map((publisher) => ({
-            type: 'publi' as const,
-            name: publisher.name.substring(0, 255),
-          })) ?? []
+          item.basic_info?.publishers?.reduce<Array<{ type: 'publi'; name: string }>>(
+            (acc, current) => {
+              if (acc.find((publi) => publi.name === current.name) === undefined)
+                acc.push({ type: 'publi', name: current.name.substring(0, 255) })
+              return acc
+            },
+            []
+          ) ?? []
 
         const studios = [...developers, ...publishers]
         let studioInstances: StudioModel[] = []
@@ -367,9 +382,12 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
         const franchises =
-          item.basic_info?.franchises?.map((franchise) => ({
-            name: franchise.name.substring(0, 255),
-          })) ?? []
+          item.basic_info?.franchises?.reduce<Array<{ name: string }>>((acc, current) => {
+            if (acc.find((f) => f.name === current.name) === undefined)
+              acc.push({ name: current.name.substring(0, 255) })
+            return []
+          }, []) ?? []
+
         let franchiseInstances: FranchiseModel[] = []
         if (franchises.length > 0)
           franchiseInstances = await Franchise.updateOrCreateMany('name', franchises).catch(
@@ -426,7 +444,10 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
                 '(worker_steam-details) Missing language(s) for ' + steamApp.id
               )
           }
-          await steamApp.related('languages').sync(languages)
+          await steamApp
+            .related('languages')
+            .sync(languages)
+            .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
         }
 
         steamApp.media = {
@@ -449,12 +470,16 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
 }
 
 async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): Promise<boolean> {
+  const { default: Achievement } = await import('#models/catalogues/achievement')
+  type AchievementModel = InstanceType<typeof Achievement>
+
   while (true) {
     const steamApps = await Catalogue.query()
       .where('is_details_enriched', false)
       .andWhereRaw(`MOD("group", ${groupMod}) = ${groupModResult}`)
       .limit(100)
       .preload('review')
+      .preload('achievements')
       .catch(async (err) => {
         await breeEmit.failedAccessingDatabase(err.message, true)
         return null
@@ -469,7 +494,7 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
           `Enriching ${steamApp.name} (${steamApp.appType}_${steamApp.id}) - ${steamApp.storeUpdatedAt}`
         )
 
-      const [reviews, achievements] = await Promise.all([
+      const [reviewsData, achievementsData] = await Promise.all([
         steamData.fetchReviews(steamApp.id),
         steamApp.appType === 'game' ? steamData.fetchAchievements(steamApp.id) : null,
       ]).catch(async (err) => {
@@ -478,33 +503,54 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
       })
 
       const review = {
-        scoreRounded: reviews.content.review_score,
+        scoreRounded: reviewsData.content.review_score,
         scorePercent:
-          reviews.content.total_reviews > 0
+          reviewsData.content.total_reviews > 0
             ? Math.trunc(
-                (reviews.content.total_positive / reviews.content.total_reviews) * 100 * 1000
+                (reviewsData.content.total_positive / reviewsData.content.total_reviews) *
+                  100 *
+                  1000
               )
             : 0,
-        countPositive: reviews.content.total_positive,
-        countNegative: reviews.content.total_negative,
-        countAll: reviews.content.total_reviews,
+        countPositive: reviewsData.content.total_positive,
+        countNegative: reviewsData.content.total_negative,
+        countAll: reviewsData.content.total_reviews,
       }
       if (steamApp.review) steamApp.review.merge(review)
-      else await steamApp.related('review').create(review)
+      else
+        await steamApp
+          .related('review')
+          .create(review)
+          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
-      if (achievements)
-        steamApp.achievements =
-          achievements.content.length > 0
-            ? achievements.content.map(
+      if (achievementsData) {
+        const achievements: Partial<AchievementModel>[] =
+          achievementsData.content.length > 0
+            ? achievementsData.content.map(
                 (achievement) =>
                   ({
                     name: achievement.name,
-                    description: achievement?.description ?? '',
+                    description: achievement?.description ?? null,
                     hidden: achievement.hidden,
                     percent: achievement.percent,
-                  }) satisfies Achievement
+                  }) satisfies Partial<AchievementModel>
               )
             : []
+        if (steamApp.achievements && steamApp.achievements.length > 0)
+          await Achievement.query()
+            .whereIn(
+              'id',
+              steamApp.achievements.map((a) => a.id.toString())
+            )
+            .delete()
+            .catch(async (err) => breeEmit.failedAccessingDatabase(err.message, true))
+        if (achievements.length > 0) {
+          await steamApp
+            .related('achievements')
+            .createMany(achievements)
+            .catch(async (err) => breeEmit.failedAccessingDatabase(err.message, true))
+        }
+      }
 
       steamApp.isDetailsEnriched = true
 
