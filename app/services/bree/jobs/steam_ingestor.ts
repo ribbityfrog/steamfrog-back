@@ -17,7 +17,8 @@ const { default: Wave } = await import('#models/treatments/wave')
 type CatalogueModel = InstanceType<typeof Catalogue>
 type WaveModel = InstanceType<typeof Wave>
 
-const ingestTest = env.get('INGEST_TEST', 'no') === 'yes' ? true : false
+const ingestTest = env.get('INGEST_TEST', false)
+const ingestParallelPromises = env.get('INGEST_PARALLEL_PROMISES', 4)
 
 let tryWave: WaveModel | null
 try {
@@ -52,12 +53,11 @@ if (wave.step === 'list') {
 if (wave.step === 'items') {
   await discordMessage.custom('(worker_steam-ingestor) Steam items started')
 
-  const done = await Promise.all([
-    ingestItems(4, 0),
-    ingestItems(4, 1),
-    ingestItems(4, 2),
-    ingestItems(4, 3),
-  ])
+  const promises: Promise<Boolean>[] = []
+  for (let mod = 0; mod < ingestParallelPromises; mod++)
+    promises.push(ingestItems(ingestParallelPromises, mod))
+
+  const done = await Promise.all(promises)
   // const done = [await ingestItems()]
 
   if (done.every((b) => b === true)) {
@@ -74,12 +74,12 @@ if (wave.step === 'details') {
   await discordMessage.custom(
     '(worker_steam-ingestor) Steam details (reviews + achievements) started'
   )
-  const done = await Promise.all([
-    ingestDetails(4, 0),
-    ingestDetails(4, 1),
-    ingestDetails(4, 2),
-    ingestDetails(4, 3),
-  ])
+
+  const promises: Promise<Boolean>[] = []
+  for (let mod = 0; mod < ingestParallelPromises; mod++)
+    promises.push(ingestDetails(ingestParallelPromises, mod))
+
+  const done = await Promise.all(promises)
 
   if (done.every((b) => b === true)) {
     wave.step = ingestTest ? 'wait' : 'done'
@@ -529,8 +529,8 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
             ? achievementsData.content.map(
                 (achievement) =>
                   ({
-                    name: achievement.name,
-                    description: achievement?.description ?? null,
+                    name: achievement.name.substring(0, 255),
+                    description: achievement?.description?.substring(0, 255) ?? null,
                     hidden: achievement.hidden,
                     percent: achievement.percent,
                   }) satisfies Partial<AchievementModel>

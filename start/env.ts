@@ -29,8 +29,9 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring the app
   |----------------------------------------------------------
   */
-  INGEST_FORCE: Env.schema.enum.optional(['yes', 'no'] as const),
-  INGEST_TEST: Env.schema.enum.optional(['yes', 'no'] as const),
+  INGEST_FORCE: Env.schema.boolean.optional(),
+  INGEST_TEST: Env.schema.boolean.optional(),
+  INGEST_PARALLEL_PROMISES: Env.schema.number.optional(),
 
   /*
   |----------------------------------------------------------
