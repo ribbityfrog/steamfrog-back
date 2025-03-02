@@ -338,7 +338,7 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
             item.game_rating.descriptors.reduce<Array<{ name: string }>>((acc, currents) => {
               const cleanedCurrents = currents
                 .replace(/<[^>]*>/g, '')
-                .split(',')
+                .split(/[,.•]+/)
                 .map((name) => name.substring(0, 127).trim())
               for (const cleanedCurrent of cleanedCurrents)
                 if (
