@@ -570,13 +570,13 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
         await steamApp
           .related('review')
           .create(review)
-          .catch(
-            async (err) =>
-              await breeEmit.failedAccessingDatabase(
-                { message: err.message, id: steamApp.id },
-                true
-              )
-          )
+          .catch(async (err) => {
+            await discordMessage.custom(
+              `(worker_steam-ingestor) Reviews fail for ${steamApp.id}, field in order:\n` +
+                `${review.scoreRounded}, ${review.scorePercent}, ${review.countPositive}, ${review.countNegative}, ${review.countAll}`
+            )
+            await breeEmit.failedAccessingDatabase({ message: err.message, id: steamApp.id }, true)
+          })
 
       if (achievementsData) {
         const achievements: Partial<AchievementModel>[] =
