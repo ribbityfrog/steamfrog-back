@@ -130,7 +130,10 @@ export default class Bree {
     }
 
     this._instance.on('failed_accessing_database', async (worker) => {
-      const message = `[Bree] Failed accessing database for ${worker.name}: ${worker?.message?.issue ?? worker?.message ?? worker}`
+      console.log(worker?.message)
+      const message =
+        `[Bree] Failed accessing database for ${worker.name} app ${worker?.message?.issue?.id ?? 'unknown'}:` +
+        `\n${worker?.message?.issue?.message ? worker?.message?.issue?.message : (worker?.message?.issue ?? 'Error unkmown')}`
 
       logger.error(message)
       discordMessage.custom(message)

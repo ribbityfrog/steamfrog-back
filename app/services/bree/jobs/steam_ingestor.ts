@@ -348,16 +348,21 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
                   acc.push({ name: cleanedCurrent })
               return acc
             }, [])
-            // item.game_rating.descriptors.map((name) => ({ name: name.substring(0, 127) }))
           ).catch(async (err) => {
-            await breeEmit.failedAccessingDatabase(err.message, true)
+            await breeEmit.failedAccessingDatabase({ message: err.message, id: steamApp.id }, true)
             return []
           })
         }
         await steamApp
           .related('descriptors')
           .sync(descriptorsInstances.map((descriptor) => descriptor.id))
-          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+          .catch(
+            async (err) =>
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
+          )
 
         steamApp.platforms = item.platforms
 
@@ -394,14 +399,23 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         if (publishers.length > 0)
           studioInstances = await Studio.updateOrCreateMany(['type', 'name'], studios).catch(
             async (err) => {
-              await breeEmit.failedAccessingDatabase(err.message, true)
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
               return []
             }
           )
         await steamApp
           .related('studios')
           .sync(studioInstances.map((studio) => studio.id))
-          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+          .catch(
+            async (err) =>
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
+          )
 
         const franchises =
           item.basic_info?.franchises?.reduce<Array<{ name: string }>>((acc, current) => {
@@ -418,14 +432,23 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
         if (franchises.length > 0)
           franchiseInstances = await Franchise.updateOrCreateMany('name', franchises).catch(
             async (err) => {
-              await breeEmit.failedAccessingDatabase(err.message, true)
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
               return []
             }
           )
         await steamApp
           .related('franchises')
           .sync(franchiseInstances.map((franchise) => franchise.id))
-          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+          .catch(
+            async (err) =>
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
+          )
 
         steamApp.isFree = item?.is_free === true
 
@@ -547,7 +570,13 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
         await steamApp
           .related('review')
           .create(review)
-          .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
+          .catch(
+            async (err) =>
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
+          )
 
       if (achievementsData) {
         const achievements: Partial<AchievementModel>[] =
@@ -569,12 +598,16 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
               steamApp.achievements.map((a) => a.id.toString())
             )
             .delete()
-            .catch(async (err) => breeEmit.failedAccessingDatabase(err.message, true))
+            .catch(async (err) =>
+              breeEmit.failedAccessingDatabase({ message: err.message, id: steamApp.id }, true)
+            )
         if (achievements.length > 0) {
           await steamApp
             .related('achievements')
             .createMany(achievements)
-            .catch(async (err) => breeEmit.failedAccessingDatabase(err.message, true))
+            .catch(async (err) =>
+              breeEmit.failedAccessingDatabase({ message: err.message, id: steamApp.id }, true)
+            )
         }
       }
 
