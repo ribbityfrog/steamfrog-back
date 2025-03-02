@@ -339,7 +339,7 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
               const cleanedCurrents = currents
                 .replace(/<[^>]*>/g, '')
                 .split(',')
-                .map((name) => name.trim())
+                .map((name) => name.substring(0, 127).trim())
               for (const cleanedCurrent of cleanedCurrents)
                 if (
                   cleanedCurrent.length > 0 &&
