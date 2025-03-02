@@ -18,7 +18,8 @@ type CatalogueModel = InstanceType<typeof Catalogue>
 type WaveModel = InstanceType<typeof Wave>
 
 const ingestTest = env.get('INGEST_TEST', false)
-const ingestParallelPromises = env.get('INGEST_PARALLEL_PROMISES', 4)
+const ingestParallelDetails = env.get('INGEST_PARALLEL_DETAILS', 1)
+const ingestParallelEnrich = env.get('INGEST_PARALLEL_ENRICH', 4)
 
 let tryWave: WaveModel | null
 try {
@@ -54,8 +55,8 @@ if (wave.step === 'items') {
   await discordMessage.custom('(worker_steam-ingestor) Steam items started')
 
   const promises: Promise<Boolean>[] = []
-  for (let mod = 0; mod < ingestParallelPromises; mod++)
-    promises.push(ingestItems(ingestParallelPromises, mod))
+  for (let mod = 0; mod < ingestParallelDetails; mod++)
+    promises.push(ingestItems(ingestParallelDetails, mod))
 
   const done = await Promise.all(promises)
   // const done = [await ingestItems()]
@@ -76,8 +77,8 @@ if (wave.step === 'details') {
   )
 
   const promises: Promise<Boolean>[] = []
-  for (let mod = 0; mod < ingestParallelPromises; mod++)
-    promises.push(ingestDetails(ingestParallelPromises, mod))
+  for (let mod = 0; mod < ingestParallelEnrich; mod++)
+    promises.push(ingestDetails(ingestParallelEnrich, mod))
 
   const done = await Promise.all(promises)
 

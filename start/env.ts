@@ -31,7 +31,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   INGEST_FORCE: Env.schema.boolean.optional(),
   INGEST_TEST: Env.schema.boolean.optional(),
-  INGEST_PARALLEL_PROMISES: Env.schema.number.optional(),
+  INGEST_PARALLEL_DETAILS: Env.schema.number.optional(),
+  INGEST_PARALLEL_ENRICH: Env.schema.number.optional(),
 
   /*
   |----------------------------------------------------------
