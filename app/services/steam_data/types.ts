@@ -99,6 +99,13 @@ interface SteamAPIVisibleStoreItem {
     feature_categoryids?: number[]
     controller_categoryids?: number[]
   }
+  reviews?: {
+    summary_filtered?: {
+      review_count: number
+      review_score: number
+      percent_positive: number
+    }
+  }
   basic_info: {
     short_description?: string
     publishers?: { name: string }[]

@@ -548,6 +548,31 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           screenshotCount: item?.screenshots?.all_ages_screenshots?.length ?? 0,
           videoCount: item.trailers?.highlights?.length ?? 0,
         }
+
+        if (!steamApp.review && item.reviews?.summary_filtered)
+          await steamApp
+            .related('review')
+            .create({
+              scoreRounded: item.reviews.summary_filtered.review_score,
+              scorePercent: item.reviews.summary_filtered.percent_positive,
+              countPositive: Math.round(
+                (item.reviews.summary_filtered.review_count *
+                  item.reviews.summary_filtered.percent_positive) /
+                  100
+              ),
+              countNegative: Math.round(
+                (item.reviews.summary_filtered.review_count *
+                  (100 - item.reviews.summary_filtered.percent_positive)) /
+                  100
+              ),
+              countAll: item.reviews.summary_filtered.review_count,
+            })
+            .catch(async (err) => {
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
+            })
       }
 
       steamApp.storePreviouslyUpdatedAt =
@@ -596,33 +621,38 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
         process.exit(1)
       })
 
-      const review = {
-        scoreRounded: reviewsData.content.review_score,
-        scorePercent:
-          reviewsData.content.total_reviews > 0
-            ? Math.trunc(
-                (reviewsData.content.total_positive / reviewsData.content.total_reviews) *
-                  100 *
-                  1000
+      if (reviewsData.content !== undefined) {
+        const review = {
+          scoreRounded: reviewsData.content.review_score,
+          scorePercent:
+            reviewsData.content.total_reviews > 0
+              ? Math.trunc(
+                  (reviewsData.content.total_positive / reviewsData.content.total_reviews) *
+                    100 *
+                    1000
+                )
+              : 0,
+          countPositive: reviewsData.content.total_positive,
+          countNegative: reviewsData.content.total_negative,
+          countAll: reviewsData.content.total_reviews,
+        }
+        if (steamApp.review) steamApp.review.merge(review)
+        else
+          await steamApp
+            .related('review')
+            .create(review)
+            .catch(async (err) => {
+              await discordMessage.custom(
+                `(worker_steam-ingestor) Reviews fail for ${steamApp.id}, field in order:\n` +
+                  `${JSON.stringify(reviewsData.content)}`
+                // `${review.scoreRounded}, ${review.scorePercent}, ${review.countPositive}, ${review.countNegative}, ${review.countAll}`
               )
-            : 0,
-        countPositive: reviewsData.content.total_positive,
-        countNegative: reviewsData.content.total_negative,
-        countAll: reviewsData.content.total_reviews,
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
+            })
       }
-      if (steamApp.review) steamApp.review.merge(review)
-      else
-        await steamApp
-          .related('review')
-          .create(review)
-          .catch(async (err) => {
-            await discordMessage.custom(
-              `(worker_steam-ingestor) Reviews fail for ${steamApp.id}, field in order:\n` +
-                `${JSON.stringify(reviewsData.content)}`
-              // `${review.scoreRounded}, ${review.scorePercent}, ${review.countPositive}, ${review.countNegative}, ${review.countAll}`
-            )
-            await breeEmit.failedAccessingDatabase({ message: err.message, id: steamApp.id }, true)
-          })
 
       if (achievementsData) {
         const achievements: Partial<AchievementModel>[] =

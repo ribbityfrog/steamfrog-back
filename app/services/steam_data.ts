@@ -103,7 +103,9 @@ class SteamData {
   ): Promise<SteamDataResponseOrReject<SteamAPIReviews, B>> {
     const result = await this._fetch('reviews', {}, isThrowSafe, String(gameid))
 
-    const data = result.data?.query_summary ?? null
+    let data = result.data?.query_summary ?? null
+    if (!data.review_score || !data.total_positive || !data.total_negative || !data.total_reviews)
+      data = undefined
     if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
 
     return { success: true, endpointKey: 'reviews', content: data }
