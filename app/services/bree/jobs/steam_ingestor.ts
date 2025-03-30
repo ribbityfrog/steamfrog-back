@@ -613,15 +613,17 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
           `Enriching ${steamApp.name} (${steamApp.appType}_${steamApp.id}) - ${steamApp.storeUpdatedAt}`
         )
 
-      const [reviewsData, achievementsData] = await Promise.all([
+      const [reviewsDataPromise, achievementsDataPromise] = await Promise.allSettled([
         steamData.fetchReviews(steamApp.id),
         steamApp.appType === 'game' ? steamData.fetchAchievements(steamApp.id) : null,
-      ]).catch(async (err) => {
-        await discordMessage.steamReject(err)
-        process.exit(1)
-      })
+      ])
 
-      if (reviewsData.content !== undefined) {
+      const reviewsData =
+        reviewsDataPromise.status === 'fulfilled' ? reviewsDataPromise.value : null
+      const achievementsData =
+        achievementsDataPromise.status === 'fulfilled' ? achievementsDataPromise.value : null
+
+      if (reviewsData && reviewsData.content !== undefined) {
         const review = {
           scoreRounded: reviewsData.content.review_score,
           scorePercent:
@@ -652,7 +654,10 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
                 true
               )
             })
-      }
+      } else
+        await discordMessage.custom(
+          '(worker_steam-ingestor) Enrichment: Reviews failed for ' + steamApp.id
+        )
 
       if (achievementsData) {
         const achievements: Partial<AchievementModel>[] =
