@@ -45,6 +45,7 @@ const steamEndpoints = {
         include_screenshots: true,
         include_trailets: true,
         include_supported_languages: true,
+        include_reviews: true,
       },
     },
     key: true,
