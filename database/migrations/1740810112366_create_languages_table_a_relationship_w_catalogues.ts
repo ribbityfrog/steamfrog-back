@@ -24,12 +24,14 @@ export default class extends BaseSchema {
           .unsigned()
           .references('id')
           .inTable(`${this.cataloguesSchema}.catalogues`)
+          .onDelete('CASCADE')
         table
           .integer('language_id')
           .notNullable()
           .unsigned()
           .references('id')
           .inTable(`${this.cataloguesSchema}.${this.languagesTable}`)
+          .onDelete('CASCADE')
         table.unique(['catalogue_id', 'language_id'])
 
         table.boolean('supported').notNullable().defaultTo(false)

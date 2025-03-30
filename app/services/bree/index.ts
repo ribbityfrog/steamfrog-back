@@ -68,22 +68,22 @@ export default class Bree {
   }
 
   async start() {
-    // const worker = await this._launchLogic()
+    const ingest = env.get('INGEST')
 
-    // if (worker === null) return
-
-    await this._instance
-      .run('steam_ingestor')
-      .then(() => {
-        this._initEvents()
-        logger.info('[service] Bree - Started properly')
-        this._isReady = true
-      })
-      .catch((error) =>
-        Except.serviceUnavailable('none', {
-          debug: { message: `[service] Bree - Failed to start : ${error.message}`, error },
+    if (ingest === true) {
+      await this._instance
+        .run('steam_ingestor')
+        .then(() => {
+          this._initEvents()
+          logger.info('[service] Bree - Started properly')
+          this._isReady = true
         })
-      )
+        .catch((error) =>
+          Except.serviceUnavailable('none', {
+            debug: { message: `[service] Bree - Failed to start : ${error.message}`, error },
+          })
+        )
+    } else logger.warn('[service] Bree not started, INGEST is false or undefined')
   }
 
   // private async _launchLogic(

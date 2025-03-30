@@ -8,9 +8,6 @@ export default class extends BaseSchema {
   protected usersTable = 'users'
   protected connectionsTable = 'connections'
   protected operationsTable = 'operations'
-  protected operationTypesAllowed = operationTypes
-    .map((operationType) => `'${operationType}'`)
-    .join(', ')
 
   async up() {
     this.schema.createSchema(this.accountsSchema)
@@ -54,16 +51,16 @@ export default class extends BaseSchema {
         .inTable(`${this.accountsSchema}.${this.usersTable}`)
         .onDelete('CASCADE')
 
-      table.string('operation_type').notNullable()
+      table
+        .string('operation_type')
+        .notNullable()
+        .checkIn([...operationTypes], 'operation_types_allowed')
 
       table.string('search_key').notNullable()
       table.string('verification_key').notNullable()
 
       table.jsonb('data').notNullable().defaultTo('{}')
     })
-    this.schema.raw(
-      `ALTER TABLE ${this.accountsSchema}.${this.operationsTable} ADD CONSTRAINT operation_type_allowed CHECK (operation_type IN (${this.operationTypesAllowed}))`
-    )
   }
 
   async down() {

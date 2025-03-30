@@ -92,6 +92,7 @@ interface SteamAPIVisibleStoreItem {
     demo_appid?: number[]
     parent_appid?: number
   }
+  content_descriptorids?: number[]
   tagids?: number[]
   categories?: {
     supported_player_categoryids?: number[]
@@ -108,10 +109,13 @@ interface SteamAPIVisibleStoreItem {
     steam_release_date?: number
     is_coming_soon?: boolean
     is_early_access?: boolean
-    // coming_soon_display?: 'date_year' | 'date_quarter' | 'date_month' | 'date_full' | string
   }
-  platforms: Record<string, boolean | Record<string, boolean>> & {
-    steam_deck_compat_category: number
+  platforms: {
+    windows?: boolean
+    steamos_linux?: boolean
+    mac?: boolean
+    steam_deck_compat_category?: 0 | 1 | 2 | 3
+    vr_support?: Record<string, boolean>
   }
   game_rating?: {
     type: string

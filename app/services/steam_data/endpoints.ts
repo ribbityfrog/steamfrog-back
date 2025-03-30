@@ -37,7 +37,7 @@ const steamEndpoints = {
         country_code: 'us',
       },
       data_request: {
-        include_tag_count: true,
+        include_tag_count: 30,
         include_basic_info: true,
         include_release: true,
         include_platforms: true,

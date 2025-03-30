@@ -6,7 +6,6 @@ import { defaultFieldsMigration } from '#models/mixins/default_fields'
 export default class extends BaseSchema {
   protected schemaName = 'treatments'
   protected tableName = 'waves'
-  protected waveStepsAllowed = waveSteps.map((waveStep) => `'${waveStep}'`).join(', ')
 
   async up() {
     this.schema.createSchema(this.schemaName)
@@ -16,14 +15,15 @@ export default class extends BaseSchema {
 
       table.increments('wave', { primaryKey: false }).notNullable()
 
-      table.string('step').notNullable().defaultTo('list')
+      table
+        .string('step')
+        .notNullable()
+        .defaultTo(waveSteps[0])
+        .checkIn([...waveSteps], 'steps_allowed')
 
       table.integer('last_group').notNullable().defaultTo(0)
       table.integer('last_appid').notNullable().defaultTo(0)
     })
-    this.schema.raw(
-      `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT step_allowed CHECK (step IN (${this.waveStepsAllowed}))`
-    )
   }
 
   async down() {

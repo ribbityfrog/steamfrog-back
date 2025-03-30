@@ -2,7 +2,16 @@ import { DateTime } from 'luxon'
 import { BaseModel, column, hasOne, hasMany, manyToMany, scope } from '@adonisjs/lucid/orm'
 import type { HasOne, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 
-import type { AppType, Media, Metacritic, Pricing, Rating, Release } from '#models/catalogues/types'
+import type {
+  AppType,
+  Maturity,
+  Media,
+  // Metacritic,
+  Platforms,
+  Pricing,
+  Rating,
+  Release,
+} from '#models/catalogues/types'
 
 import db from '@adonisjs/lucid/services/db'
 import Category from '#models/catalogues/category'
@@ -13,6 +22,7 @@ import Descriptor from '#models/catalogues/descriptor'
 import Language from '#models/catalogues/language'
 import Review from '#models/catalogues/review'
 import Achievement from '#models/catalogues/achievement'
+import Vr from '#models/catalogues/vr'
 
 export default class Catalogue extends BaseModel {
   static schemaName = 'catalogues'
@@ -56,13 +66,13 @@ export default class Catalogue extends BaseModel {
   declare release: Release
 
   @column()
-  declare ageGate: number
+  declare maturity: Maturity
 
   @column()
   declare rating: Rating | null
 
   @column()
-  declare platforms: any
+  declare platforms: Platforms
 
   @column()
   declare isFree: boolean
@@ -70,8 +80,8 @@ export default class Catalogue extends BaseModel {
   @column()
   declare pricing: Pricing | null
 
-  @column()
-  declare metacritic: Metacritic | null
+  // @column()
+  // declare metacritic: Metacritic | null
 
   @column()
   declare media: Media
@@ -117,6 +127,11 @@ export default class Catalogue extends BaseModel {
 
   @hasMany(() => Achievement)
   declare achievements: HasMany<typeof Achievement>
+
+  @manyToMany(() => Vr, {
+    pivotTable: 'catalogues.catalogues_vrs',
+  })
+  declare vrs: ManyToMany<typeof Vr>
 
   static enrichedGame = scope((query) =>
     query.where('is_enriched', true).andWhere('app_type', 'game')

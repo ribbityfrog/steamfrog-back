@@ -35,14 +35,23 @@ export type Rating = {
   type: string
   rating: string
   age: number
-  // descriptors: string[]
 }
 
-// export type Platforms = {
-//   windows: boolean
-//   mac: boolean
-//   linux: boolean
-// }
+export type Maturity = {
+  ageGate: number
+  isMature: boolean
+  isViolent: boolean
+  isNudity: boolean
+  isSexual: boolean
+  isPorn: boolean
+}
+
+export type Platforms = {
+  windows: boolean
+  mac: boolean
+  linux: boolean
+  deck: 0 | 1 | 2 | 3
+}
 
 export type Pricing = {
   priceInitial: number
@@ -50,14 +59,6 @@ export type Pricing = {
   priceDiscount: number
   isPrePurchase: boolean
 }
-
-// export type Language = {
-//   elanguage: number
-//   language: string
-//   supported: boolean
-//   audio: boolean
-//   subtitles: boolean
-// }
 
 export type Metacritic = {
   score: number

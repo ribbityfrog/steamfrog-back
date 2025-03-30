@@ -59,7 +59,6 @@ if (wave.step === 'items') {
     promises.push(ingestItems(ingestParallelDetails, mod))
 
   const done = await Promise.all(promises)
-  // const done = [await ingestItems()]
 
   if (done.every((b) => b === true)) {
     wave.step = 'details'
@@ -237,6 +236,7 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
   const { default: Franchise } = await import('#models/catalogues/franchise')
   const { default: Descriptor } = await import('#models/catalogues/descriptor')
   const { default: Language } = await import('#models/catalogues/language')
+  const { default: Vr } = await import('#models/catalogues/vr')
   type StudioModel = InstanceType<typeof Studio>
   type FranchiseModel = InstanceType<typeof Franchise>
   type DescriptorModel = InstanceType<typeof Descriptor>
@@ -319,8 +319,16 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           hasDemo: item.related_items?.demo_appid ? true : false,
         }
 
-        steamApp.ageGate =
-          item?.game_rating?.use_age_gate === true ? (item?.game_rating?.required_age ?? 0) : 0
+        steamApp.maturity = {
+          isMature: item.content_descriptorids?.includes(5) ?? false,
+          isViolent: item.content_descriptorids?.includes(2) ?? false,
+          isNudity: item.content_descriptorids?.includes(1) ?? false,
+          isSexual: item.content_descriptorids?.includes(4) ?? false,
+          isPorn: item.content_descriptorids?.includes(3) ?? false,
+          ageGate:
+            item?.game_rating?.use_age_gate === true ? (item?.game_rating?.required_age ?? 0) : 0,
+        }
+
         steamApp.rating = !item?.game_rating
           ? null
           : {
@@ -364,7 +372,40 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
               )
           )
 
-        steamApp.platforms = item.platforms
+        steamApp.platforms = {
+          windows: item.platforms?.windows === true,
+          mac: item.platforms?.mac === true,
+          linux: item.platforms?.steamos_linux === true,
+          deck: item.platforms?.steam_deck_compat_category ?? 0,
+        }
+
+        if (item.platforms?.vr_support !== undefined) {
+          const vrSupports = Object.keys(item.platforms.vr_support)
+
+          if (vrSupports.length > 0) {
+            const vrInstances = await Vr.updateOrCreateMany(
+              'code',
+              vrSupports.map((vrSupport) => ({ code: vrSupport }))
+            ).catch(async (err) => {
+              await breeEmit.failedAccessingDatabase(
+                { message: err.message, id: steamApp.id },
+                true
+              )
+              return []
+            })
+
+            await steamApp
+              .related('vrs')
+              .sync(vrInstances.map((vr) => vr.id))
+              .catch(
+                async (err) =>
+                  await breeEmit.failedAccessingDatabase(
+                    { message: err.message, id: steamApp.id },
+                    true
+                  )
+              )
+          }
+        } else await steamApp.related('vrs').detach()
 
         const developers =
           item.basic_info?.developers?.reduce<Array<{ type: 'devel'; name: string }>>(

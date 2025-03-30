@@ -7,22 +7,18 @@ export default class extends BaseSchema {
   protected categoriesTable = 'categories'
   protected tagsTable = 'tags'
 
-  protected categoryTypesAllowed = categoryTypes
-    .map((categoryType) => `'${categoryType}'`)
-    .join(', ')
-
   async up() {
     this.schema.withSchema(this.cataloguesSchema).createTable(this.categoriesTable, (table) => {
       table.integer('id').primary()
 
-      table.string('type').notNullable()
+      table
+        .string('type')
+        .notNullable()
+        .checkIn([...categoryTypes], 'category_types_allowed')
       table.string('name').notNullable()
       table.integer('order').notNullable().defaultTo(99999)
       table.string('logo').notNullable()
     })
-    this.schema.raw(
-      `ALTER TABLE ${this.cataloguesSchema}.${this.categoriesTable} ADD CONSTRAINT type_allowed CHECK (type IN (${this.categoryTypesAllowed}))`
-    )
 
     this.schema.withSchema(this.cataloguesSchema).createTable(this.tagsTable, (table) => {
       table.integer('id').primary()

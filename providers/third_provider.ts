@@ -3,8 +3,6 @@ import Brevo from '#services/brevo/index'
 import Bree from '#services/bree/index'
 import Flydrive from '#services/flydrive/index'
 import discordMessage from '#utils/discord_message'
-import env from '#start/env'
-import logger from '@adonisjs/core/services/logger'
 
 export default class ThirdProvider {
   constructor(protected app: ApplicationService) {}
@@ -41,17 +39,13 @@ export default class ThirdProvider {
    * The process has been started
    */
   async ready() {
-    const ingestForce = env.get('INGEST_FORCE')
-    const ingestNodeEnv = env.get('NODE_ENV', 'development') === 'production' ? true : false
+    const scheduler = await this.app.container.make(Bree)
+    await scheduler
+      .start()
+      .then()
+      .catch(() => {})
 
-    if ((ingestNodeEnv && ingestForce !== false) || ingestForce === true) {
-      const scheduler = await this.app.container.make(Bree)
-      await scheduler
-        .start()
-        .then()
-        .catch(() => {})
-      discordMessage.custom('(START-provider) Third services ready', false)
-    } else logger.warn('[service] Bree not started, production only')
+    discordMessage.custom('(START-provider) Third services ready', false)
   }
 
   /**

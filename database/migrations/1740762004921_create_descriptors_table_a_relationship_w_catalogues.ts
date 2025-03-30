@@ -23,12 +23,14 @@ export default class extends BaseSchema {
           .unsigned()
           .references('id')
           .inTable(`${this.cataloguesSchema}.catalogues`)
+          .onDelete('CASCADE')
         table
           .integer('descriptor_id')
           .notNullable()
           .unsigned()
           .references('id')
           .inTable(`${this.cataloguesSchema}.${this.descriptorsTable}`)
+          .onDelete('CASCADE')
         table.unique(['catalogue_id', 'descriptor_id'])
       })
   }

@@ -13,7 +13,8 @@ export default class extends BaseSchema {
         .notNullable()
         .unsigned()
         .references('id')
-        .inTable('catalogues.catalogues')
+        .inTable(`${this.cataloguesSchema}.catalogues`)
+        .onDelete('CASCADE')
 
       table.string('name').notNullable()
       table.string('description').defaultTo(null)

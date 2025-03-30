@@ -6,8 +6,6 @@ export default class extends BaseSchema {
   protected schemaName = 'catalogues'
   protected tableName = 'catalogues'
 
-  protected appTypesAllowed = appTypes.map((appType) => `'${appType}'`).join(', ')
-
   async up() {
     this.schema.createSchema(this.schemaName)
 
@@ -15,7 +13,11 @@ export default class extends BaseSchema {
       table.integer('id').primary()
       table.integer('group').notNullable()
 
-      table.string('app_type').notNullable().defaultTo('new')
+      table
+        .string('app_type')
+        .notNullable()
+        .defaultTo('new')
+        .checkIn([...appTypes], 'app_types_allowed')
 
       table.integer('parent_id')
       table.string('name', 511).notNullable()
@@ -32,36 +34,21 @@ export default class extends BaseSchema {
 
       table.jsonb('release')
 
-      table.integer('age_gate').notNullable().defaultTo(0)
+      table.jsonb('maturity')
       table.jsonb('rating')
 
       table.jsonb('platforms')
 
-      // table.specificType('developers', 'varchar(255)[]').notNullable().defaultTo('{}')
-      // table.specificType('publishers', 'varchar(255)[]').notNullable().defaultTo('{}')
-      // table.specificType('franchises', 'varchar(255)[]')
-
-      // table.specificType('categories', 'integer[]').notNullable().defaultTo('{}')
-      // table.specificType('tags', 'integer[]').notNullable().defaultTo('{}')
-
       table.boolean('is_free')
       table.jsonb('pricing')
 
-      table.specificType('languages', 'jsonb[]').notNullable().defaultTo('{}')
-      // table.jsonb('languages').notNullable().defaultTo('[]')
       table.jsonb('media')
 
-      table.jsonb('metacritic')
+      // table.jsonb('metacritic')
 
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
     })
-    this.schema.raw(
-      `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT app_type_allowed CHECK (app_type IN (${this.appTypesAllowed}))`
-    )
-    this.schema.raw(
-      `ALTER TABLE ${this.schemaName}.${this.tableName} ADD CONSTRAINT age_gate_limit CHECK (age_gate >= 0)`
-    )
   }
 
   async down() {
