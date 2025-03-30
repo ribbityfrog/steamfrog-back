@@ -518,7 +518,11 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
             let hasMissingLanguages = false
             for (const language of item.supported_languages) {
               let elang =
-                language.elanguage === -1 ? language.eadditionallanguage + 1000 : language.elanguage
+                language.elanguage === -1
+                  ? language.eadditionallanguage + 1000
+                  : language.elanguage === 27
+                    ? 29
+                    : language.elanguage
               if (!languageCodes.includes(elang)) {
                 hasMissingLanguages = true
                 continue
@@ -614,7 +618,8 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
           .catch(async (err) => {
             await discordMessage.custom(
               `(worker_steam-ingestor) Reviews fail for ${steamApp.id}, field in order:\n` +
-                `${review.scoreRounded}, ${review.scorePercent}, ${review.countPositive}, ${review.countNegative}, ${review.countAll}`
+                `${JSON.stringify(reviewsData.content)}`
+              // `${review.scoreRounded}, ${review.scorePercent}, ${review.countPositive}, ${review.countNegative}, ${review.countAll}`
             )
             await breeEmit.failedAccessingDatabase({ message: err.message, id: steamApp.id }, true)
           })

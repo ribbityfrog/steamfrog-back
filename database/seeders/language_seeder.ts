@@ -140,14 +140,14 @@ export default class extends BaseSeeder {
         code: 'uk',
       },
       {
-        id: 27,
-        lang: 'spanish - latin america',
-        code: 'es-419',
-      },
-      {
         id: 28,
         lang: 'vietnamese',
         code: 'vi',
+      },
+      {
+        id: 29,
+        lang: 'spanish - latin america',
+        code: 'es-419',
       },
       {
         id: 30,
