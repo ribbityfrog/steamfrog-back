@@ -105,7 +105,13 @@ class SteamData {
     const result = await this._fetch('reviews', {}, isThrowSafe, String(gameid))
 
     let data = result.data?.query_summary ?? null
-    if (!data.review_score || !data.total_positive || !data.total_negative || !data.total_reviews) {
+    if (
+      data &&
+      (data.review_score === undefined ||
+        data.total_positive === undefined ||
+        data.total_negative === undefined ||
+        data.total_reviews === undefined)
+    ) {
       data = undefined
       discordMessage.custom(`SteamData: unfiltered reviews failed for ${gameid}.`)
     }
