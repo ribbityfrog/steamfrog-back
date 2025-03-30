@@ -15,6 +15,7 @@ import type {
   SteamAPITag,
 } from '#services/steam_data/types'
 import { convertStringToAppType } from '#services/steam_data/types'
+import discordMessage from '#utils/discord_message'
 
 class SteamData {
   private _apiKey = env.get('STEAM_KEY')
@@ -104,8 +105,10 @@ class SteamData {
     const result = await this._fetch('reviews', {}, isThrowSafe, String(gameid))
 
     let data = result.data?.query_summary ?? null
-    if (!data.review_score || !data.total_positive || !data.total_negative || !data.total_reviews)
+    if (!data.review_score || !data.total_positive || !data.total_negative || !data.total_reviews) {
       data = undefined
+      discordMessage.custom(`SteamData: unfiltered reviews failed for ${gameid}.`)
+    }
     if (data === null) return this._issueHandler(result, isThrowSafe, 'Excepted data not found')
 
     return { success: true, endpointKey: 'reviews', content: data }
