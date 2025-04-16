@@ -5,33 +5,28 @@ import Catalogue from '#models/catalogues/catalogue'
 
 export default class StatsController {
   async global() {
-    // return await Catalogue.query()
-    //   .where('app_type', 'game')
-    //   .andWhereRaw(`release->>'isReleased' = 'true'`)
-    //   .andWhereRaw(`release->>'date' IS NULL`)
-
     const stats = await Catalogue.query()
       .select(
         db.raw(`extract(year from (release->>'date')::timestamp) as release_year`),
-        db.raw(`count(*) filter (where app_type = 'game') as total_games`),
-        db.raw(`count(*) filter (where app_type = 'dlc') as total_dlcs`),
+        db.raw(`count(*) filter (where app_type = 'game')::integer as games_count`),
+        db.raw(`count(*) filter (where app_type = 'dlc')::integer as dlcs_count`),
         db.raw(
-          `count(*) filter (where app_type = 'game' and platforms->>'windows' = 'true') as windows_games`
+          `count(*) filter (where app_type = 'game' and platforms->>'windows' = 'true')::integer as games_windows_count`
         ),
         db.raw(
-          `count(*) filter (where app_type = 'dlc' and platforms->>'windows' = 'true') as windows_dlcs`
+          `count(*) filter (where app_type = 'dlc' and platforms->>'windows' = 'true')::integer as dlcs_windows_count`
         ),
         db.raw(
-          `count(*) filter (where app_type = 'game' and platforms->>'mac' = 'true') as mac_games`
+          `count(*) filter (where app_type = 'game' and platforms->>'mac' = 'true')::integer as games_mac_count`
         ),
         db.raw(
-          `count(*) filter (where app_type = 'dlc' and platforms->>'mac' = 'true') as mac_dlcs`
+          `count(*) filter (where app_type = 'dlc' and platforms->>'mac' = 'true')::integer as dlcs_mac_count`
         ),
         db.raw(
-          `count(*) filter (where app_type = 'game' and platforms->>'linux' = 'true') as linux_games`
+          `count(*) filter (where app_type = 'game' and platforms->>'linux' = 'true')::integer as games_linux_count`
         ),
         db.raw(
-          `count(*) filter (where app_type = 'dlc' and platforms->>'linux' = 'true') as linux_dlcs`
+          `count(*) filter (where app_type = 'dlc' and platforms->>'linux' = 'true')::integer as dlcs_linux_count`
         )
       )
       .whereRaw(`release->>'isReleased' = 'true'`)
@@ -39,5 +34,14 @@ export default class StatsController {
       .orderByRaw(`extract(year from (release->>'date')::timestamp)`)
 
     return stats
+  }
+
+  async undated() {
+    return await Catalogue.query()
+      .where('app_type', 'game')
+      .select('id', 'name', 'is_free', db.raw(`pricing->>'priceFinal' as price`))
+      .andWhereRaw(`release->>'isReleased' = 'true'`)
+      .andWhereRaw(`release->>'date' IS NULL`)
+      .orderBy('id', 'desc')
   }
 }
