@@ -114,6 +114,7 @@ interface SteamAPIVisibleStoreItem {
   }
   release: {
     steam_release_date?: number
+    original_release_date?: number
     is_coming_soon?: boolean
     is_early_access?: boolean
   }

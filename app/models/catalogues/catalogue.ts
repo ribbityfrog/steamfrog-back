@@ -29,6 +29,8 @@ export default class Catalogue extends BaseModel {
   static tableName = 'catalogues'
   static table = 'catalogues.catalogues'
 
+  serializeExtras = true
+
   @column({ isPrimary: true })
   declare id: number
 
