@@ -311,7 +311,7 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
             .catch(async (err) => await breeEmit.failedAccessingDatabase(err.message, true))
 
         const releaseDate =
-          item.release?.steam_release_date ?? item.release?.original_release_date ?? null
+          item.release?.steam_release_date || item.release?.original_release_date || null
         steamApp.release = {
           date: releaseDate ? DateTime.fromSeconds(releaseDate) : null,
           isReleased: !(item.release?.is_coming_soon === true),
