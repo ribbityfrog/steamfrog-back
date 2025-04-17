@@ -44,4 +44,13 @@ export default class StatsController {
       .andWhereRaw(`release->>'date' IS NULL`)
       .orderBy('id', 'desc')
   }
+
+  async windowsless() {
+    return await Catalogue.query()
+      .where('app_type', 'game')
+      .select('id', 'name', 'is_free', db.raw(`pricing->>'priceFinal' as price`))
+      .andWhereRaw(`release->>'isReleased' = 'true'`)
+      .andWhereRaw(`platforms->>'windows' = 'false'`)
+      .orderBy('id', 'desc')
+  }
 }

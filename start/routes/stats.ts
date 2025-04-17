@@ -7,6 +7,7 @@ export default function () {
     .group(() => {
       router.get('global', [statsController, 'global'])
       router.get('undated', [statsController, 'undated'])
+      router.get('windowsless', [statsController, 'windowsless'])
     })
     .prefix('stats')
 }

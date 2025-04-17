@@ -695,7 +695,10 @@ async function ingestDetails(groupMod: number = 1, groupModResult: number = 0): 
       steamApp.isDetailsEnriched = true
 
       await steamApp.save().catch(async (err) => {
-        await breeEmit.failedAccessingDatabase(err.message, true)
+        await breeEmit.failedAccessingDatabase(
+          `(${steamApp.id} - ${steamApp.name}) ${err.message}`,
+          true
+        )
       })
     }
   }
