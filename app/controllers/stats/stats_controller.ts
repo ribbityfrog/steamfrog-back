@@ -5,13 +5,31 @@ import db from '@adonisjs/lucid/services/db'
 import Catalogue from '#models/catalogues/catalogue'
 
 export default class StatsController {
+  async count() {
+    return await meng.getOrSet('count', async () => await Catalogue.appsCount(true))
+  }
+
+  async maturity() {
+    return await meng.getOrSet('maturity', async () => await Catalogue.maturityCount(true))
+  }
+
+  async brokens() {
+    return await meng.getOrSet('brokens', async () => await Catalogue.brokens(true))
+  }
+
+  async finance() {}
+
+  async platforms() {}
+
+  async dates() {}
+
   async global() {
     const stats = meng.getOrSet(
       'basics',
       async () =>
         await Catalogue.query()
           .select(
-            db.raw(`extract(year from (release->>'date')::timestamp) as release_year`),
+            db.raw(`to_char((release->>'date')::timestamp, 'YYYY-MM') as release_month`),
             db.raw(`count(*) filter (where app_type = 'game')::integer as games_count`),
             db.raw(`count(*) filter (where app_type = 'dlc')::integer as dlcs_count`),
             db.raw(
@@ -34,8 +52,8 @@ export default class StatsController {
             )
           )
           .whereRaw(`release->>'isReleased' = 'true'`)
-          .groupByRaw(`extract(year from (release->>'date')::timestamp)`)
-          .orderByRaw(`extract(year from (release->>'date')::timestamp)`)
+          .groupByRaw(`to_char((release->>'date')::timestamp, 'YYYY-MM')`)
+          .orderByRaw(`to_char((release->>'date')::timestamp, 'YYYY-MM')`)
           .pojo()
     )
 

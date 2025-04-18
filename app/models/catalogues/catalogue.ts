@@ -135,139 +135,72 @@ export default class Catalogue extends BaseModel {
   })
   declare vrs: ManyToMany<typeof Vr>
 
-  static enrichedGame = scope((query) =>
-    query.where('is_enriched', true).andWhere('app_type', 'game')
+  static treatable = scope((query) =>
+    query
+      .where((sub) => sub.where('app_type', 'game').orWhere('app_type', 'dlc'))
+      .andWhereRaw(`release->>'isReleased' = 'true'`)
+      .andWhereRaw(`release->>'date' IS NOT NULL`)
+      .andWhere((sub) =>
+        sub.where('is_free', true).orWhereRaw(`pricing->>'priceFinal' IS NOT NULL`)
+      )
   )
-  static enrichedDlc = scope((query) =>
-    query.where('is_enriched', true).andWhere('app_type', 'dlc')
-  )
-  static enrichedGameOrDlc = scope((query) =>
-    query.where('is_enriched', true).andWhereIn('app_type', ['game', 'dlc'])
-  )
 
-  static async statsStudios() {}
-
-  static async statsGames() {
-    const [
-      mostExpensiveGame,
-      mostExpensiveDlc,
-      mostPositiveGame,
-      mostPositiveDlc,
-      mostNegativeGame,
-      mostNegativeDlc,
-    ] = await Promise.all([
-      Catalogue.query()
-        .withScopes((scopes) => scopes.enrichedGame())
-        .andWhereNotNull('pricing')
-        .orderByRaw("(pricing->>'priceFinal')::numeric DESC")
-        .limit(3),
-      Catalogue.query()
-        .withScopes((scopes) => scopes.enrichedDlc())
-        .andWhereNotNull('pricing')
-        .orderByRaw("(pricing->>'priceFinal')::numeric DESC")
-        .limit(3),
-      Catalogue.query()
-        .withScopes((scopes) => scopes.enrichedGame())
-        .andWhereNotNull('reviews')
-        .orderByRaw("(reviews->>'positiveCount')::integer DESC")
-        .limit(3),
-      Catalogue.query()
-        .withScopes((scopes) => scopes.enrichedDlc())
-        .andWhereNotNull('reviews')
-        .orderByRaw("(reviews->>'positiveCount')::integer DESC")
-        .limit(3),
-      Catalogue.query()
-        .withScopes((scopes) => scopes.enrichedGame())
-        .andWhereNotNull('reviews')
-        .orderByRaw("(reviews->>'negativeCount')::integer DESC")
-        .limit(3),
-      Catalogue.query()
-        .withScopes((scopes) => scopes.enrichedDlc())
-        .andWhereNotNull('reviews')
-        .orderByRaw("(reviews->>'negativeCount')::integer DESC")
-        .limit(3),
-    ])
-
-    return {
-      mostExpensiveGame,
-      mostExpensiveDlc,
-      mostPositiveGame,
-      mostPositiveDlc,
-      mostNegativeGame,
-      mostNegativeDlc,
-    }
-  }
-
-  static async statsTotals() {
-    const [totals] = await db.from(Catalogue.table).select(
-      db.raw(`
-        (COUNT(CASE WHEN app_type = 'game' THEN 1 END))::integer AS game_count,
-        (COUNT(CASE WHEN app_type = 'dlc' THEN 1 END))::integer AS dlc_count,
-        (COUNT(CASE WHEN app_type = 'outer' THEN 1 END))::integer AS outer_count,
-        (SUM((pricing->>'priceInitial')::numeric) / 100)::integer AS price_initial_sum,
-        (SUM((pricing->>'priceFinal')::numeric) / 100)::integer AS price_final_sum
-        `)
-    )
-
-    return totals
-  }
-
-  static async statsPlatforms() {
-    const [platforms] = await db
-      .from(Catalogue.table)
-      // .withScopes((scopes) => scopes.enrichedGameOrDlc())
-      .where('is_enriched', true)
-      .andWhereIn('app_type', ['game', 'dlc'])
+  static async appsCount(pojo: boolean = false) {
+    const query = Catalogue.query()
+      .withScopes((sco) => sco.treatable())
       .select(
-        db.raw(`
-                jsonb_build_object(
-                  'game', jsonb_build_object(
-                    'count', COUNT(CASE WHEN (platforms->>'windows')::boolean IS true AND app_type = 'game' THEN 1 END),
-                    'priceInitial', SUM(CASE WHEN (platforms->>'windows')::boolean IS true AND app_type = 'game' THEN (pricing->>'priceInitial')::numeric END) / 100,
-                    'priceFinal', SUM(CASE WHEN (platforms->>'windows')::boolean IS true AND app_type = 'game' THEN (pricing->>'priceFinal')::numeric END) / 100
-                  ),
-                  'dlc', jsonb_build_object(
-                    'count', COUNT(CASE WHEN (platforms->>'windows')::boolean IS true AND app_type = 'dlc' THEN 1 END),
-                    'priceInitial', SUM(CASE WHEN (platforms->>'windows')::boolean IS true AND app_type = 'dlc' THEN (pricing->>'priceInitial')::numeric END) / 100,
-                    'priceFinal', SUM(CASE WHEN (platforms->>'windows')::boolean IS true AND app_type = 'dlc' THEN (pricing->>'priceFinal')::numeric END) / 100
-                  )
-                ) AS windows,
-                jsonb_build_object(
-                  'game', jsonb_build_object(
-                    'count', COUNT(CASE WHEN (platforms->>'mac')::boolean IS true AND app_type = 'game' THEN 1 END),
-                    'priceInitial', SUM(CASE WHEN (platforms->>'mac')::boolean IS true AND app_type = 'game' THEN (pricing->>'priceInitial')::numeric END) / 100,
-                    'priceFinal', SUM(CASE WHEN (platforms->>'mac')::boolean IS true AND app_type = 'game' THEN (pricing->>'priceFinal')::numeric END) / 100
-                    ),
-                  'dlc', jsonb_build_object(
-                    'count', COUNT(CASE WHEN (platforms->>'mac')::boolean IS true AND app_type = 'dlc' THEN 1 END),
-                    'priceInitial', SUM(CASE WHEN (platforms->>'mac')::boolean IS true AND app_type = 'dlc' THEN (pricing->>'priceInitial')::numeric END) / 100,
-                    'priceFinal', SUM(CASE WHEN (platforms->>'mac')::boolean IS true AND app_type = 'dlc' THEN (pricing->>'priceFinal')::numeric END) / 100
-                  )
-                ) AS mac,
-                jsonb_build_object(
-                  'game', jsonb_build_object(
-                    'count', COUNT(CASE WHEN (platforms->>'linux')::boolean IS true AND app_type = 'game' THEN 1 END),
-                    'priceInitial', SUM(CASE WHEN (platforms->>'linux')::boolean IS true AND app_type = 'game' THEN (pricing->>'priceInitial')::numeric END) / 100,
-                    'priceFinal', SUM(CASE WHEN (platforms->>'linux')::boolean IS true AND app_type = 'game' THEN (pricing->>'priceFinal')::numeric END) / 100
-                  ),
-                  'dlc', jsonb_build_object(
-                    'count', COUNT(CASE WHEN (platforms->>'linux')::boolean IS true AND app_type = 'dlc' THEN 1 END),
-                    'priceInitial', SUM(CASE WHEN (platforms->>'linux')::boolean IS true AND app_type = 'dlc' THEN (pricing->>'priceInitial')::numeric END) / 100,
-                    'priceFinal', SUM(CASE WHEN (platforms->>'linux')::boolean IS true AND app_type = 'dlc' THEN (pricing->>'priceFinal')::numeric END) / 100
-                  )
-                ) AS linux
-            `)
+        db.raw(`count(*) filter (where app_type = 'game')::integer as games_count`),
+        db.raw(`count(*) filter (where app_type = 'dlc')::integer as dlcs_count`)
       )
 
-    return platforms
+    if (pojo) query.pojo()
+
+    const result = await query
+
+    return result[0]
   }
 
-  static async notOnWindows() {
-    const games = await Catalogue.query()
-      .where('is_enriched', true)
-      .andWhere('app_type', 'game')
-      .andWhereRaw("(platforms->>'windows')::boolean IS false")
+  static async maturityCount(pojo: boolean = false) {
+    const query = Catalogue.query()
+      .withScopes((sco) => sco.treatable())
+      .where('app_type', 'game')
+      .select(
+        db.raw(`count(*) filter (where maturity->>'isMature' = 'true')::integer as mature_count`),
+        db.raw(`count(*) filter (where maturity->>'isViolent' = 'true')::integer as violent_count`),
+        db.raw(`count(*) filter (where maturity->>'isNudity' = 'true')::integer as nudity_count`),
+        db.raw(`count(*) filter (where maturity->>'isSexual' = 'true')::integer as sexual_count`),
+        db.raw(`count(*) filter (where maturity->>'isPorn' = 'true')::integer as porn_count`)
+      )
 
-    return { count: games.length, games }
+    if (pojo) query.pojo()
+
+    const result = await query
+
+    return result[0]
+  }
+
+  static async brokens(pojo: boolean = false) {
+    const query = Catalogue.query()
+      .select('id', 'name', 'is_free', db.raw(`pricing->>'priceFinal' as price`))
+      .where((sub) => sub.where('app_type', 'game'))
+      .andWhere('is_items_enriched', true)
+      .andWhere((sub) =>
+        sub
+          .where((subsub) =>
+            subsub
+              .whereRaw(`release->>'isReleased' = 'true'`)
+              .andWhereRaw(`release->>'date' IS NULL`)
+          )
+          .orWhere((subsub) =>
+            subsub
+              .where('is_free', false)
+              .andWhereRaw(`pricing->>'priceFinal' IS NULL`)
+              .andWhereRaw(`release->>'isReleased' = 'true'`)
+          )
+      )
+
+    if (pojo) query.pojo()
+
+    return await query
   }
 }
