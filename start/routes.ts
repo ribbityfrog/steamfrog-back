@@ -12,11 +12,11 @@ import { middleware } from './kernel.js'
 
 // Routes
 import accountsRoutes from '#routes/accounts'
-// import explorerRoutes from '#routes/explorer'
+import explorerRoutes from '#routes/explorer'
 import statsRoutes from '#routes/stats'
 
 accountsRoutes()
-// explorerRoutes()
+explorerRoutes()
 statsRoutes()
 
 router.get('/', () => 'Hello :)')

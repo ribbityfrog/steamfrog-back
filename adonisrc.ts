@@ -14,6 +14,7 @@ export default defineConfig({
     () => import('@adonisjs/core/commands'),
     () => import('@adonisjs/lucid/commands'),
     () => import('@adonisjs/bouncer/commands'),
+    () => import('@adonisjs/cache/commands')
   ],
 
   /*
@@ -41,6 +42,7 @@ export default defineConfig({
       environment: ['web', 'test'],
     },
     () => import('@adonisjs/bouncer/bouncer_provider'),
+    () => import('@adonisjs/cache/cache_provider')
   ],
 
   /*
