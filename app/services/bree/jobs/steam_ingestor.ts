@@ -328,6 +328,7 @@ async function ingestItems(groupMod: number = 1, groupModResult: number = 0): Pr
           isNudity: item.content_descriptorids?.includes(1) ?? false,
           isSexual: item.content_descriptorids?.includes(4) ?? false,
           isPorn: item.content_descriptorids?.includes(3) ?? false,
+          isVanilla: !item.content_descriptorids || item.content_descriptorids.length === 0,
           ageGate:
             item?.game_rating?.use_age_gate === true ? (item?.game_rating?.required_age ?? 0) : 0,
         }

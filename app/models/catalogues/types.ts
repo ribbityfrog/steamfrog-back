@@ -44,6 +44,7 @@ export type Maturity = {
   isNudity: boolean
   isSexual: boolean
   isPorn: boolean
+  isVanilla: boolean
 }
 
 export type Platforms = {
