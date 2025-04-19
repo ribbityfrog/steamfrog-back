@@ -147,6 +147,8 @@ class SteamData {
       content: achievements
         .filter((achievement: any) => achievement !== null)
         .map((achievement: any) => {
+          if (!achievement) return null
+
           const schema = schemas.content.find((s: any) => s.name === achievement.name)
 
           if (schema === undefined) return null
@@ -157,7 +159,8 @@ class SteamData {
             hidden: Boolean(schema.hidden),
             percent: Number.parseFloat(achievement.percent) * 10,
           } satisfies SteamAPIAchievement
-        }),
+        })
+        .filter((achievement: any) => achievement),
     }
   }
 
