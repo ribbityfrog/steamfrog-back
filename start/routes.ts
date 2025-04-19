@@ -14,10 +14,12 @@ import { middleware } from './kernel.js'
 import accountsRoutes from '#routes/accounts'
 // import explorerRoutes from '#routes/explorer'
 import statsRoutes from '#routes/stats'
+import toolsRoutes from '#routes/tools'
 
 accountsRoutes()
 // explorerRoutes()
 statsRoutes()
+toolsRoutes()
 
 router.get('/', () => 'Hello :)')
 router.get('/favicon.ico', () => 'Not a website ^^')
