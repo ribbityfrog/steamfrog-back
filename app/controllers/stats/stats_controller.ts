@@ -17,7 +17,9 @@ export default class StatsController {
     return await meng.getOrSet('brokens', async () => await Catalogue.brokens(true))
   }
 
-  async finance() {}
+  async finance() {
+    return await meng.getOrSet('finance', async () => await Catalogue.finance(true))
+  }
 
   async platforms() {}
 

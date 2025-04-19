@@ -165,6 +165,7 @@ export default class Catalogue extends BaseModel {
       .withScopes((sco) => sco.treatable())
       .where('app_type', 'game')
       .select(
+        db.raw(`count(*) filter (where maturity->>'isVanilla' = 'true')::integer as vanilla_count`),
         db.raw(`count(*) filter (where maturity->>'isMature' = 'true')::integer as mature_count`),
         db.raw(`count(*) filter (where maturity->>'isViolent' = 'true')::integer as violent_count`),
         db.raw(`count(*) filter (where maturity->>'isNudity' = 'true')::integer as nudity_count`),
@@ -202,5 +203,48 @@ export default class Catalogue extends BaseModel {
     if (pojo) query.pojo()
 
     return await query
+  }
+
+  static async finance(pojo: boolean = false) {
+    const query = Catalogue.query()
+      .withScopes((sco) => sco.treatable())
+      .select(
+        db.raw(
+          `COUNT(*) FILTER (WHERE app_type = 'game' AND is_free::boolean = true)::integer AS games_free_count`
+        ),
+        db.raw(
+          `COUNT(*) FILTER (WHERE app_type = 'dlc' AND is_free::boolean = true)::integer AS dlcs_free_count`
+        ),
+        db.raw(
+          `SUM((pricing->>'priceFinal')::integer) FILTER (WHERE app_type = 'game' AND is_free::boolean = false)::integer AS games_price_final_sum`
+        ),
+        db.raw(
+          `SUM((pricing->>'priceInitial')::integer) FILTER (WHERE app_type = 'game' AND is_free::boolean = false)::integer AS games_price_initial_sum`
+        ),
+        db.raw(
+          `AVG((pricing->>'priceInitial')::integer) FILTER (WHERE app_type = 'game' AND is_free::boolean = false)::integer AS games_price_initial_avg`
+        ),
+        db.raw(
+          `AVG((pricing->>'priceDiscount')::integer) FILTER (WHERE app_type = 'game' AND is_free::boolean = false AND (pricing->>'priceDiscount')::numeric > 0)::integer AS games_price_discount_avg`
+        ),
+        db.raw(
+          `SUM((pricing->>'priceFinal')::integer) FILTER (WHERE app_type = 'dlc' AND is_free::boolean = false)::integer AS dlcs_price_final_sum`
+        ),
+        db.raw(
+          `SUM((pricing->>'priceInitial')::integer) FILTER (WHERE app_type = 'dlc' AND is_free::boolean = false)::integer AS dlcs_price_initial_sum`
+        ),
+        db.raw(
+          `AVG((pricing->>'priceInitial')::integer) FILTER (WHERE app_type = 'dlc' AND is_free::boolean = false)::integer AS dlcs_price_initial_avg`
+        ),
+        db.raw(
+          `AVG((pricing->>'priceDiscount')::integer) FILTER (WHERE app_type = 'dlc' AND is_free::boolean = false AND (pricing->>'priceDiscount')::numeric > 0)::integer AS dlcs_price_discount_avg`
+        )
+      )
+
+    if (pojo) query.pojo()
+
+    const result = await query
+
+    return result[0]
   }
 }
