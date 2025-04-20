@@ -182,7 +182,7 @@ export default class Catalogue extends BaseModel {
 
   static async brokens(pojo: boolean = false) {
     const query = Catalogue.query()
-      .select('id', 'name', 'is_free', db.raw(`pricing->>'priceFinal' as price`))
+      .select('id', 'name', 'is_free', 'pricing')
       .where((sub) => sub.where('app_type', 'game'))
       .andWhere('is_items_enriched', true)
       .andWhere((sub) =>
@@ -246,5 +246,35 @@ export default class Catalogue extends BaseModel {
     const result = await query
 
     return result[0]
+  }
+
+  static async naming(keywords: string[], andor: boolean = false) {
+    const queryCount = Catalogue.query()
+      .withScopes((sco) => sco.treatable())
+      .where('app_type', 'game')
+      .andWhere((sub) => {
+        for (const kw of keywords)
+          andor
+            ? sub.orWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
+            : sub.andWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
+      })
+      .count('* as count')
+
+    const queryLast = Catalogue.query()
+      .select('id', 'name', 'is_free', 'pricing', 'release')
+      .withScopes((sco) => sco.treatable())
+      .where('app_type', 'game')
+      .andWhere((sub) => {
+        for (const kw of keywords)
+          andor
+            ? sub.orWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
+            : sub.andWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
+      })
+      .orderByRaw(`release->>'date' DESC`)
+      .limit(32)
+
+    const [count, last] = await Promise.all([queryCount, queryLast])
+
+    return { count: count[0].$extras.count, last }
   }
 }

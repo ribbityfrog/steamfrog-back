@@ -12,17 +12,6 @@ export default class ToolsController {
     if (keywords.length >= 16 || keywords.some((k) => k.length > 32))
       return Except.unprocessableEntity()
 
-    const counter = await Catalogue.query()
-      .withScopes((sco) => sco.treatable())
-      .where('app_type', 'game')
-      .andWhere((sub) => {
-        for (const kw of keywords)
-          andor
-            ? sub.orWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
-            : sub.andWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
-      })
-      .count('* as count')
-
-    return counter[0].$extras.count
+    return await Catalogue.naming(keywords, andor)
   }
 }
