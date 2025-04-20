@@ -248,8 +248,120 @@ export default class Catalogue extends BaseModel {
     return result[0]
   }
 
+  static async platforms(pojo: boolean = false) {
+    const query = Catalogue.query()
+      .withScopes((sco) => sco.treatable())
+      .select(
+        db.raw(`to_char((release->>'date')::timestamp, 'YYYY') as release_year`),
+        db.raw(`count(*) filter (where app_type = 'game')::integer as games_count`),
+        db.raw(`count(*) filter (where app_type = 'dlc')::integer as dlcs_count`),
+        db.raw(
+          `count(*) filter (where app_type = 'game' and platforms->>'windows' = 'true')::integer as games_windows_count`
+        ),
+        db.raw(
+          `count(*) filter (where app_type = 'dlc' and platforms->>'windows' = 'true')::integer as dlcs_windows_count`
+        ),
+        db.raw(
+          `count(*) filter (where app_type = 'game' and platforms->>'mac' = 'true')::integer as games_mac_count`
+        ),
+        db.raw(
+          `count(*) filter (where app_type = 'dlc' and platforms->>'mac' = 'true')::integer as dlcs_mac_count`
+        ),
+        db.raw(
+          `count(*) filter (where app_type = 'game' and platforms->>'linux' = 'true')::integer as games_linux_count`
+        ),
+        db.raw(
+          `count(*) filter (where app_type = 'dlc' and platforms->>'linux' = 'true')::integer as dlcs_linux_count`
+        )
+      )
+      .groupByRaw(`to_char((release->>'date')::timestamp, 'YYYY')`)
+      .orderByRaw(`to_char((release->>'date')::timestamp, 'YYYY')`)
+
+    if (pojo) query.pojo()
+
+    return await query
+  }
+
+  static async schedule(pojo: boolean = false) {
+    const queryAll = Catalogue.query()
+      .withScopes((sco) => sco.treatable())
+      .where('app_type', 'game')
+      .select(
+        db.raw(`to_char((release->>'date')::timestamp, 'YYYY') as year`),
+        db.raw(`to_char((release->>'date')::timestamp, 'MM') as month`),
+        db.raw(`count(*) filter (where app_type = 'game')::integer as games_count`)
+      )
+      .groupByRaw(
+        `to_char((release->>'date')::timestamp, 'YYYY'),
+        to_char((release->>'date')::timestamp, 'MM')`
+      )
+      .orderByRaw(
+        `to_char((release->>'date')::timestamp, 'YYYY') DESC,
+        to_char((release->>'date')::timestamp, 'MM') ASC`
+      )
+
+    const queryTop = db
+      .query()
+      .from((sub) =>
+        sub
+          .from('catalogues.catalogues')
+          .where('app_type', 'game')
+          .andWhereRaw(`(release->>'isReleased')::boolean = true`)
+          .andWhereRaw(`release->>'date' IS NOT NULL`)
+          .join('catalogues.reviews', 'catalogues.id', 'reviews.catalogue_id')
+          .orderBy('score_rounded', 'desc')
+          .orderBy('score_percent', 'desc')
+          .limit(5000)
+          .select([
+            'catalogues.id',
+            'catalogues.app_type',
+            db.raw(`release->>'date' as release_date`),
+          ])
+          .as('top_rated')
+      )
+      .select(
+        db.raw(`to_char(release_date::timestamp, 'YYYY') as year`),
+        db.raw(`to_char(release_date::timestamp, 'MM') as month`),
+        db.raw(`count(*) filter (where app_type = 'game')::integer as games_count`)
+      )
+      .groupByRaw(
+        `to_char(release_date::timestamp, 'YYYY'),
+        to_char(release_date::timestamp, 'MM')`
+      )
+      .orderByRaw(
+        `to_char(release_date::timestamp, 'YYYY') DESC,
+        to_char(release_date::timestamp, 'MM') ASC`
+      )
+
+    if (pojo) {
+      queryAll.pojo()
+      queryTop.then((rows) => rows.map((r) => ({ ...r })))
+    }
+
+    const [all, top] = await Promise.all([queryAll, queryTop])
+
+    return { all, top }
+  }
+
+  static async windowsless(pojo: true) {
+    const query = Catalogue.query()
+      .withScopes((sco) => sco.treatable())
+      .where('app_type', 'game')
+      .andWhereRaw(`platforms->>'windows' = 'false'`)
+      .select('id', 'name', 'is_free', 'release', 'pricing')
+      .orderByRaw(`release->>'date' DESC`)
+
+    if (pojo) query.pojo()
+
+    return await query
+  }
+
   static async naming(keywords: string[], andor: boolean = false) {
     const queryCount = Catalogue.query()
+      .select(
+        db.raw(`TO_CHAR((release->>'date')::timestamp, 'YYYY') AS year`),
+        db.raw(`COUNT(*)::integer AS count`)
+      )
       .withScopes((sco) => sco.treatable())
       .where('app_type', 'game')
       .andWhere((sub) => {
@@ -258,7 +370,9 @@ export default class Catalogue extends BaseModel {
             ? sub.orWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
             : sub.andWhereRaw('LOWER(name) LIKE ?', [`%${kw}%`])
       })
-      .count('* as count')
+      .groupByRaw(`TO_CHAR((release->>'date')::timestamp, 'YYYY')`)
+      .orderByRaw(`TO_CHAR((release->>'date')::timestamp, 'YYYY')`)
+      .pojo()
 
     const queryLast = Catalogue.query()
       .select('id', 'name', 'is_free', 'pricing', 'release')
@@ -275,6 +389,6 @@ export default class Catalogue extends BaseModel {
 
     const [count, last] = await Promise.all([queryCount, queryLast])
 
-    return { count: count[0].$extras.count, last }
+    return { count, last }
   }
 }
